@@ -1,0 +1,71 @@
+{
+ "title": "Mecanum - Line test",
+ "widgets": [
+  {
+   "id": "grp_test",
+   "t": "group",
+   "label": "LINE SENSORS",
+   "color": "#00e676",
+   "x": 56,
+   "y": 42,
+   "w": 448,
+   "h": 212,
+   "children": [
+    "ln_l",
+    "ln_c",
+    "ln_r"
+   ]
+  },
+  {
+   "id": "ln_l",
+   "t": "led",
+   "x": 80,
+   "y": 100,
+   "w": 120,
+   "h": 130,
+   "label": "Left",
+   "model": "dot",
+   "colorOn": "#4ade80",
+   "groupId": "grp_test"
+  },
+  {
+   "id": "ln_c",
+   "t": "led",
+   "x": 220,
+   "y": 100,
+   "w": 120,
+   "h": 130,
+   "label": "Center",
+   "model": "dot",
+   "colorOn": "#4ade80",
+   "groupId": "grp_test"
+  },
+  {
+   "id": "ln_r",
+   "t": "led",
+   "x": 360,
+   "y": 100,
+   "w": 120,
+   "h": 130,
+   "label": "Right",
+   "model": "dot",
+   "colorOn": "#4ade80",
+   "groupId": "grp_test"
+  },
+  {
+   "id": "lbl_hint",
+   "t": "label",
+   "x": 80,
+   "y": 270,
+   "w": 400,
+   "h": 70,
+   "label": "Slide black tape under the robot. The light above it should change.",
+   "value": "Slide black tape under the robot. The light above it should change.",
+   "model": "card"
+  }
+ ],
+ "canvas": {
+  "w": 560,
+  "h": 396
+ }
+}

@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Node
+/node_modules/
+/package-lock.json
+
+# Built Etsy artifacts
+etsy-package/MicrobitRemote-v*/
+
+# Track most output/ for reference (screenshots, baseline, generated videos),
+# but skip ffmpeg intermediates (regenerated every run).
+etsy-package/output/video-scenes/
+etsy-package/output/theme-morph-tmp/
+etsy-package/output/visual-diffs/
+
+# Track the shipped ZIP for reference
+!etsy-package/MicrobitRemote-v*.zip
+.claude/

@@ -1,0 +1,87 @@
+# index.html carries a copy of firmware/main.ts, because the page is normally
+# opened from file:// where fetch() is blocked and the Firmware dialog could
+# not read the source at runtime. That duplication can drift silently: edit
+# the firmware, forget to re-run the embed tool, and the dialog serves stale
+# code that looks perfectly plausible.
+#
+# This job is the thing that notices. It re-runs the embed and fails if the
+# result differs from what is committed.
+name: firmware embed check
+
+on:
+  push:
+    paths:
+      - 'firmware/**'
+      - 'index.html'
+      - 'tools/embed-firmware.cjs'
+      - '.github/workflows/firmware-embed-check.yml'
+  pull_request:
+    paths:
+      - 'firmware/**'
+      - 'index.html'
+      - 'tools/embed-firmware.cjs'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Embedded firmware matches firmware/main.ts
+        run: node tools/embed-firmware.cjs --check
+
+      - name: index.html parses as JSON-bearing HTML
+        run: |
+          node -e "
+          const fs=require('fs');
+          const h=fs.readFileSync('index.html','utf8');
+          const m=h.match(/<script id=\"fwSource\"[^>]*>([\s\S]*?)<\/script>/);
+          if(!m) { console.error('no fwSource block in index.html'); process.exit(1); }
+          const src=m[1].replace(/^\r?\n/,'');
+          const file=fs.readFileSync('firmware/main.ts','utf8');
+          const norm=t=>t.split('\r\n').join('\n');
+          if(norm(src)!==norm(file)) { console.error('embedded firmware differs from firmware/main.ts'); process.exit(1); }
+          const ver=(src.match(/FIRMWARE_VERSION\s*=\s*\"([^\"]+)\"/)||[])[1];
+          if(!ver) { console.error('no FIRMWARE_VERSION in the embedded source'); process.exit(1); }
+          console.log('ok: embedded firmware matches, version '+ver);
+          "
+
+      - name: Layout CFG is valid and matches examples/
+        run: |
+          node -e "
+          const fs=require('fs');
+          const src=fs.readFileSync('firmware/main.ts','utf8');
+          const b64=(src.match(/const CFG = \"([A-Za-z0-9+/=]+)\"/)||[])[1];
+          if(!b64) { console.error('no CFG constant in firmware/main.ts'); process.exit(1); }
+          const cfg=JSON.parse(Buffer.from(b64,'base64').toString('utf8'));
+          const ids=cfg.widgets.map(w=>w.id);
+          if(ids.length!==new Set(ids).size) { console.error('duplicate widget ids in CFG'); process.exit(1); }
+          // Controls must not overlap. Group panels are meant to sit behind
+          // their members, and separators live in the gutters, so both are
+          // excluded from this test.
+          const ctl=cfg.widgets.filter(w=>w.t!=='group'&&w.t!=='separator');
+          for(let i=0;i<ctl.length;i++)for(let k=i+1;k<ctl.length;k++){
+            const a=ctl[i],b=ctl[k];
+            if(a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h){
+              console.error('controls overlap: '+a.id+' x '+b.id); process.exit(1);
+            }
+          }
+          const oob=cfg.widgets.filter(w=>w.x+w.w>cfg.canvas.w||w.y+w.h>cfg.canvas.h).map(w=>w.id);
+          if(oob.length){ console.error('outside the canvas: '+oob.join(', ')); process.exit(1); }
+          const ex=JSON.parse(fs.readFileSync('examples/keyes-4wd-mecanum-layout.json','utf8'));
+          if(JSON.stringify(ex)!==JSON.stringify(cfg)){
+            console.error('examples/keyes-4wd-mecanum-layout.json is out of date with the CFG in main.ts');
+            process.exit(1);
+          }
+          const chunks=Math.ceil(b64.length/18);
+          console.log('ok: '+cfg.widgets.length+' widgets, canvas '+cfg.canvas.w+'x'+cfg.canvas.h+
+                      ', CFG '+b64.length+' chars ('+chunks+' chunks, ~'+(chunks*35/1000).toFixed(1)+'s transfer)');
+          "
+
+      - name: App script parses
+        run: node --check script.js

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keyes 4WD Mecanum RXY - Bluetooth widget remote</title>
+<style>
+  :root{
+    --bg:#0d1520; --panel:#152232; --ink:#e8f0fa; --muted:#93a8c4;
+    --accent:#00d4ff; --line:rgba(255,255,255,.12); --code:#0a1119;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f6f9fc; --panel:#fff; --ink:#12202f; --muted:#5b6f88;
+           --accent:#0077dd; --line:rgba(0,0,0,.12); --code:#eef3f8; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px 20px 64px;background:var(--bg);color:var(--ink);
+       font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:820px;margin:0 auto}
+  h1{font-size:2rem;margin:0 0 4px}
+  h2{font-size:1.25rem;margin:38px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .tag{color:var(--muted);margin:0 0 20px}
+  .tag a{color:var(--accent)}
+  a{color:var(--accent)}
+  table{width:100%;border-collapse:collapse;margin:14px 0;display:block;overflow-x:auto}
+  th,td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;white-space:nowrap}
+  code{background:var(--code);padding:2px 6px;border-radius:5px;font-size:.9em}
+  pre{background:var(--code);padding:14px 16px;border-radius:10px;overflow-x:auto;
+      border:1px solid var(--line)}
+  pre code{background:none;padding:0}
+  blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+             background:var(--panel);color:var(--muted);border-radius:0 8px 8px 0}
+  .glyph{font-size:1.1em}
+  ul{padding-left:20px}
+</style>
+</head>
+<body><section><h2>Web v2.15 &mdash; Honest transfer progress</h2><p>The loading bar was <code>12 + 4 per chunk</code> capped at 90, which reaches the cap at chunk 20 and then stops moving. A layout of 200+ chunks therefore spent most of its transfer showing a motionless &ldquo;90%&rdquo; and looked hung. Firmware now appends the chunk count to the opening line (<code>CFGBEGIN 228</code>); both this app and stock bit-rxy match that line with <code>startsWith()</code>, so the argument is invisible to anything that does not want it and a micro:bit sending a bare <code>CFGBEGIN</code> is unaffected. With a total known the bar is a true fraction and the subtitle reads <strong>24 of 245</strong>, localised as <em>of / sur / من</em>.</p></section><section><h2>Tests &mdash; app-driven twins for children</h2><p>Every bring-up test in <code>firmware/tests/</code> now has a <code>test-app-*.ts</code> twin that carries its own small layout and sends it over the link: press Connect and a panel for that one subsystem appears, nothing to import. Children drive the wheels or mix a strip colour themselves instead of watching a fixed sequence. Run <code>test-app-ble.ts</code> first &mdash; every other panel depends on the radio, and it touches no robot hardware. When a panel appears but nothing moves, the plain twin has no Bluetooth at all, which is what separates a dead subsystem from a dead link. Panels are generated, so a layout cannot drift from the code that serves it.</p></section><section><h2>Web v2.13 — Build / Play fully reviewed</h2><p>Build and Play now use a deterministic state model: mode switches and view controls never rewrite geometry, disconnected Play deep-clones Build, connected Play uses only verified device CFG, Arrange is zoom-correct and command-safe, runtime listeners are lifecycle-cleaned, and Fit/fullscreen handle oversized canvases without clipping or dead space. Responsive Play/fullscreen checks passed from 640×900 through 1920×1080. Firmware remains v52.</p></section><section><h2>Web v2.10 — Play Fit Content</h2><p>Play Fit uses occupied widget bounds instead of empty authoring canvas space, while preserving the logical CFG geometry and 1:1 view.</p></section><section><h2>Web v2.4 — Stable Build/Play geometry</h2><p>Fixed Build → Import → Play → Build changing widget positions. Automatic Tidy on resize/tab switch has been removed. Build is the authoritative model and Play renders a deep-cloned snapshot; only explicit Tidy or Play/Arrange edits may change geometry.</p></section><section><h2>Web v2.3 — Fit large imported designs</h2><p>Build now uses a scrollable, zoomable editor viewport without changing the logical CFG canvas. Imports automatically fit the whole design. Use <strong>Fit Design</strong>, +/−, 1:1, mouse-wheel/controls, normal scroll, or Alt/Option + drag to navigate large layouts while preserving exact export geometry.</p></section><section><h2>Web v2.2 — Group + Line</h2><p>Build now includes config-native <strong>Group</strong> and <strong>Line/Separator</strong> widgets. Groups can capture child widget IDs and move the whole functional section together; line separators support horizontal/vertical orientation, subtle/solid/dashed styles, thickness, color and an optional label. Both survive Layout JSON and MakeCode CFG export.</p></section><section><h2>Web v2.1 — Portable layout export</h2><p>Build and Play/Arrange can export the exact design as <strong>Layout JSON</strong> or a <strong>MakeCode CFG</strong> TypeScript snippet. Both include the canvas geometry and a fresh deterministic config revision.</p></section><section><h2>v51 — Config-defined reference layout</h2><p>The MakeCode CFG now carries the approved <strong>1372 × 776</strong> layout, including widget positions/sizes and an explicit canvas size. The web app v2.1 honors that canvas metadata. Config revision: <code>47c78c1f</code>. Control behavior remains v50.</p></section><section><h2>v50 — Heartbeat follows Telemetry</h2><p>Heartbeat is now controlled by the Telemetry selector in every drive mode: <strong>All/Basic</strong> send heartbeat, while <strong>Off</strong> is silent. Line/Avoid motor activity no longer suppresses the heartbeat. The widget configuration is unchanged.</p></section><section><h2>v49 — Distance Read selector</h2><p>The MakeCode CFG now includes a <strong>Distance read</strong> selector with <strong>Auto</strong> and <strong>Read now</strong>. Read now takes one ultrasonic sample in any drive mode and updates the distance gauge and graph, then returns the selector to Auto.</p></section>
+<div class="wrap">
+
+<h1>Keyes 4WD Mecanum RXY</h1>
+<p class="tag">A drag-and-drop Bluetooth remote for the <strong>KS4031 / KS4032 Mecanum robot</strong>,
+driven from a micro:bit. Powered by <a href="https://workshop-diy.org">Workshop-DIY.org</a></p>
+
+<p>The web app builds its interface from a layout the <strong>robot itself sends</strong> on
+connect — so the firmware owns the layout, and the app is a generic renderer. Nothing to
+configure on the browser side.</p>
+
+<h2>What you need</h2>
+<ul>
+  <li>BBC micro:bit V2</li>
+  <li>Keyestudio <strong>KS4031 or KS4032 4WD Mecanum</strong> chassis</li>
+  <li>A browser with Web Bluetooth: Chrome, Edge or Opera on desktop/Android
+      (Safari and iOS are not supported — Apple does not implement Web Bluetooth)</li>
+</ul>
+
+<h2>Flashing the firmware</h2>
+<ol>
+  <li>Open <a href="https://makecode.microbit.org">makecode.microbit.org</a> → <strong>New Project</strong></li>
+  <li>Switch to <strong>JavaScript</strong></li>
+  <li><strong>Extensions</strong>: import <code>github:keyestudio2019/mecanum_robot_v2</code> and add Bluetooth + Neopixel</li>
+  <li>Paste the contents of <a href="firmware/main.ts"><code>firmware/main.ts</code></a></li>
+  <li><strong>Download</strong> to the micro:bit</li>
+</ol>
+<p>The version number scrolls across the LED matrix at boot — check it after every flash.</p>
+
+<h2>Running the app</h2>
+<p>Serve the folder over <code>http://</code> or <code>https://</code> and open <code>index.html</code>:</p>
+<pre><code>python -m http.server 8952</code></pre>
+<p>Then browse to <a href="http://localhost:8952">http://localhost:8952</a> and press <strong>Connect</strong>.</p>
+<blockquote>Opening the file directly via <code>file://</code> mostly works but is unreliable —
+<code>file://</code> is treated as a unique security origin, which breaks parts of Web Bluetooth.</blockquote>
+
+<h2>Controls</h2>
+<table>
+  <tr><th>Control</th><th>Does</th></tr>
+  <tr><td>D-pad</td><td>Mecanum drive: forward/back, strafe left/right, and diagonals</td></tr>
+  <tr><td>Speed</td><td>Top speed for manual <em>and</em> autonomous driving</td></tr>
+  <tr><td>Mode</td><td><code>Manual</code> / <code>Line</code> (line-following) / <code>Avoid</code> (obstacle avoidance)</td></tr>
+  <tr><td>STOP</td><td>Cut all four motors immediately</td></tr>
+  <tr><td>Buzz</td><td>Short tone</td></tr>
+  <tr><td>LED L / LED R</td><td>Headlights</td></tr>
+  <tr><td>Ultrasonic servo</td><td>Sensor servo angle, 0 to 180 degrees</td></tr>
+  <tr><td>Line L / C / R</td><td>Line sensors — <strong>lit = that sensor is on the line</strong></td></tr>
+  <tr><td>Distance</td><td>Ultrasonic reading, as a gauge and a rolling graph</td></tr>
+  <tr><td>Uptime</td><td>Session timer — proves the link is alive</td></tr>
+  <tr><td>Strip / Strip colour / Brightness / Strip effect</td><td>4-LED NeoPixel strip — on/off, 9 colours, brightness, and <code>Solid</code> / <code>Rainbow</code> / <code>Chase</code> / <code>Sparkle</code></td></tr>
+  <tr><td>Sound / Temperature</td><td>micro:bit V2 on-board sensors</td></tr>
+  <tr><td>Tilt X / Tilt Y</td><td>Chassis pitch and roll, as a percentage of 1g</td></tr>
+  <tr><td>Button A / Button B / Logo touch</td><td>The micro:bit's own inputs, mirrored into the app</td></tr>
+</table>
+
+<h2>Pin map</h2>
+<p>Read from the <code>mecanum_robot_v2</code> extension source and the KS4031 tutorial, not
+inferred. <strong>V1 and V2 differ</strong>, which is the single biggest source of wasted time on
+this robot.</p>
+<div class="scroll">
+<table>
+  <tr><th>Function</th><th>V1 (KS4031 tutorial)</th><th>V2 (this board)</th></tr>
+  <tr><td>Line sensors</td><td>P1, P2 (two)</td><td><strong>P3, P4, P10 (three)</strong></td></tr>
+  <tr><td>Servo</td><td>P14</td><td>P14</td></tr>
+  <tr><td>Ultrasonic trig / echo</td><td>P15 / P16</td><td>P15 / P16</td></tr>
+  <tr><td>Infrared receiver</td><td>P9</td><td>P9</td></tr>
+  <tr><td>Motors / headlights</td><td>I2C <code>0x47</code></td><td>I2C <strong><code>0x30</code></strong></td></tr>
+  <tr><td>WS2812 RGB</td><td>P8 (documented)</td><td><strong>P7</strong> (undocumented; found by boot scan)</td></tr>
+</table>
+</div>
+<p>The V2 extension exposes no RGB or WS2812 function at all &mdash;
+<code>setLed(LedCount, LedState)</code> is on/off only for the two headlights, over I2C. Any
+addressable strip must be driven with the generic <code>neopixel</code> package, and Keyestudio does
+not say on which pin.</p>
+
+<h2>The 5&times;5 matrix stays off</h2>
+<p>P3, P4, P7 and P10 are all LED-matrix row/column drivers. With the display enabled those pins are
+multiplexed and a digital read returns garbage, so <strong>Line mode would steer on noise</strong>.
+That is why the firmware calls <code>led.enable(false)</code> &mdash; the trigger is the line
+sensors, not the NeoPixel strip.</p>
+<p><code>USE_MATRIX = false</code> is therefore correct for this chassis. Every
+<code>basic.show*</code> / <code>led.*</code> call is gated on it rather than deleted, so it stays a
+one-line decision &mdash; but turning the matrix back on costs you working line-following.</p>
+<p>For the same reason <strong>light level is unavailable on this robot</strong>. The micro:bit
+senses light with the LED matrix itself, so <code>input.lightLevel()</code> re-enables the display
+and reclaims P3, P4, P7, P9 and P10 &mdash; stealing P7 back from the NeoPixel strip and corrupting
+the line sensors. It was polled here briefly and did exactly that.</p>
+
+<h2>NeoPixel strip</h2>
+<p>The 4-LED strip is on <strong>P7</strong>. Keyestudio does not document this for V2 &mdash; the
+V2 extension has no RGB or WS2812 function at all &mdash; so it was found empirically with the boot
+pin scan in <code>firmware/main.ts</code> (<code>NP_PIN_SCAN</code>, left in place behind a flag
+because these pin differences recur).</p>
+<p><strong>Do not use P8.</strong> That is the V1 pin, from the KS4031 tutorial, and it does not
+apply to this board.</p>
+<p>P7 is one of the six LED-matrix pins, so the display must stay off for the strip to work. That
+costs nothing here, because the matrix already has to be off for the line sensors.</p>
+<p>Effects are <code>Solid</code>, <code>Rainbow</code>, <code>Chase</code> and
+<code>Sparkle</code>, with nine colours and a brightness slider.</p>
+
+<h2>Protocol</h2>
+<p>Plain text lines over the Nordic UART service.</p>
+<pre><code>App → robot    SET &lt;widgetId&gt; &lt;value...&gt;
+App → robot    GETCFG                      request the layout (sent once, on connect)
+robot → App    CFGBEGIN / CFG &lt;b64&gt; / CFGEND
+robot → App    UPD &lt;widgetId&gt; &lt;value&gt;      sensor and status updates</code></pre>
+<p><strong>Keep messages at or under 20 bytes.</strong> The micro:bit negotiates the default
+23-byte ATT MTU, leaving exactly 20 bytes of payload. A longer write is <em>silently
+truncated</em> rather than rejected — the trailing newline never arrives and the command
+vanishes with no error on either side. The app splits outgoing writes into 20-byte packets;
+the UART service reassembles them.</p>
+
+<h2>Licence</h2>
+<p>MIT</p>
+
+</div>
+
+<section><h3>Web app 2.0</h3><p>The web application version is now <strong>2.0</strong>. A single very discreet Bismillah appears at the absolute top. Firmware remains v50.</p></section>
+<p><strong>v2.11:</strong> Build adds Trim Canvas to remove unused logical canvas space while preserving relative widget layout and supporting Undo/Redo.</p>
+</body>
+</html>

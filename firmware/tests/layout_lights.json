@@ -1,0 +1,104 @@
+{
+ "title": "Mecanum - Strip test",
+ "widgets": [
+  {
+   "id": "grp_test",
+   "t": "group",
+   "label": "LIGHTS",
+   "color": "#c084fc",
+   "x": 56,
+   "y": 42,
+   "w": 628,
+   "h": 462,
+   "children": [
+    "toggle_led_l",
+    "toggle_led_r",
+    "toggle_np",
+    "np_color",
+    "np_effect",
+    "np_bright"
+   ]
+  },
+  {
+   "id": "toggle_led_l",
+   "t": "toggle",
+   "x": 80,
+   "y": 100,
+   "w": 140,
+   "h": 120,
+   "label": "Left lamp",
+   "groupId": "grp_test"
+  },
+  {
+   "id": "toggle_led_r",
+   "t": "toggle",
+   "x": 240,
+   "y": 100,
+   "w": 140,
+   "h": 120,
+   "label": "Right lamp",
+   "groupId": "grp_test"
+  },
+  {
+   "id": "toggle_np",
+   "t": "toggle",
+   "x": 400,
+   "y": 100,
+   "w": 140,
+   "h": 120,
+   "label": "Strip",
+   "groupId": "grp_test"
+  },
+  {
+   "id": "np_color",
+   "t": "select",
+   "x": 80,
+   "y": 260,
+   "w": 190,
+   "h": 90,
+   "label": "Colour",
+   "options": "Red,Orange,Yellow,Green,Blue,Indigo,Violet,Purple,White",
+   "groupId": "grp_test"
+  },
+  {
+   "id": "np_effect",
+   "t": "select",
+   "x": 290,
+   "y": 260,
+   "w": 190,
+   "h": 90,
+   "label": "Effect",
+   "options": "Solid,Rainbow,Chase,Sparkle",
+   "groupId": "grp_test"
+  },
+  {
+   "id": "np_bright",
+   "t": "slider",
+   "x": 510,
+   "y": 240,
+   "w": 150,
+   "h": 240,
+   "label": "Bright",
+   "min": 0,
+   "max": 255,
+   "step": 5,
+   "value": 150,
+   "groupId": "grp_test"
+  },
+  {
+   "id": "lbl_hint",
+   "t": "label",
+   "x": 80,
+   "y": 520,
+   "w": 580,
+   "h": 70,
+   "label": "Switch the lamps on, then pick a colour for the strip.",
+   "value": "Switch the lamps on, then pick a colour for the strip.",
+   "model": "card"
+  }
+ ],
+ "canvas": {
+  "w": 740,
+  "h": 646
+ }
+}

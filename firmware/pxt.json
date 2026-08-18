@@ -1,0 +1,27 @@
+{
+  "name": "keyes-4wd-mecanum-rxy",
+  "description": "Widget-driven Bluetooth controller for KS4031/KS4032",
+  "dependencies": {
+    "core": "*",
+    "microphone": "*",
+    "bluetooth": "*",
+    "neopixel": "*",
+    "pxt-mecanum-robot-v2": "github:keyestudio2019/mecanum_robot_v2"
+  },
+  "files": [
+    "main.ts",
+    "README.md"
+  ],
+  "preferredEditor": "tsprj",
+  "yotta": {
+    "config": {
+      "microbit-dal": {
+        "bluetooth": {
+          "open": 1,
+          "whitelist": 0,
+          "security_level": null
+        }
+      }
+    }
+  }
+}
