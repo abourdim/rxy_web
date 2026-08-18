@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.16';
+const APP_VERSION = 'v2.17';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -784,7 +784,7 @@ const I18N = {
     loadingTitle: "🧩 Loading your remote...",
     loadingSub: "Getting layout from micro:bit",
     loadingRequesting: "Checking layout version…",
-    loadingReceiving: "Receiving layout…", loadingOf: "of",
+    loadingReceiving: "Receiving layout…", loadingOf: "of", loadingSec: "s",
     loadingDecoding: "Decoding layout…",
     loadingReady: "Ready!",
     codeModal: {
@@ -905,7 +905,7 @@ const I18N = {
     loadingTitle: "🧩 Chargement de ta télécommande...",
     loadingSub: "Récupération depuis le micro:bit",
     loadingRequesting: "Vérification de la version de la disposition…",
-    loadingReceiving: "Réception de la disposition…", loadingOf: "sur",
+    loadingReceiving: "Réception de la disposition…", loadingOf: "sur", loadingSec: "s",
     loadingDecoding: "Décodage de la disposition…",
     loadingReady: "Prêt !",
     codeModal: {
@@ -1026,7 +1026,7 @@ const I18N = {
     loadingTitle: "🧩 جارٍ تحميل جهاز التحكم...",
     loadingSub: "الحصول على التخطيط من micro:bit",
     loadingRequesting: "جارٍ التحقق من إصدار التخطيط…",
-    loadingReceiving: "جارٍ استقبال التخطيط…", loadingOf: "من",
+    loadingReceiving: "جارٍ استقبال التخطيط…", loadingOf: "من", loadingSec: "ث",
     loadingDecoding: "جارٍ فك ترميز التخطيط…",
     loadingReady: "جاهز!",
     codeModal: {
@@ -5789,6 +5789,18 @@ function showBuildOverlay(sub='✨ Building...'){
 
 // Loading overlay helpers
 let _loadingIndeterminate = null;
+// Elapsed-time clock for the loading overlay. The chunk counter already says
+// how far along the transfer is, but at 35ms per chunk a 262-chunk layout takes
+// ~9s, and without a moving clock a stalled link looks the same as a slow one.
+let _loadingClock = null;
+let _loadingStartedAt = 0;
+
+function tickLoadingClock(){
+  const el = $('#loadingTime');
+  if (!el) return;
+  el.textContent = Math.floor((Date.now() - _loadingStartedAt) / 1000) + tr('loadingSec');
+}
+
 function showLoading(title = tr('loadingTitle'), sub = tr('loadingSub')){
   if (!state._allowLoadingOverlay) return;
   const ov = $('#loadingOverlay');
@@ -5798,6 +5810,11 @@ function showLoading(title = tr('loadingTitle'), sub = tr('loadingSub')){
   const subEl = $('#loadingSub'); if (subEl) subEl.textContent = sub;
   const pctEl = $('#loadingPct'); if (pctEl) pctEl.textContent = '0%';
   const bar = $('#loadingBarFill'); if (bar) bar.style.width = '8%';
+
+  _loadingStartedAt = Date.now();
+  clearInterval(_loadingClock);
+  tickLoadingClock();
+  _loadingClock = setInterval(tickLoadingClock, 1000);
 
   clearInterval(_loadingIndeterminate);
   // fun, kid-friendly "wiggle" while chunks arrive
@@ -5825,6 +5842,8 @@ function hideLoading(){
   if (!ov) return;
   clearInterval(_loadingIndeterminate);
   _loadingIndeterminate = null;
+  clearInterval(_loadingClock);
+  _loadingClock = null;
   ov.classList.remove('show');
   ov.setAttribute('aria-hidden','true');
 }

@@ -2101,7 +2101,12 @@ body.theme-sunset .canvas { background: linear-gradient(135deg, #6a0572, #ab0a78
   background: linear-gradient(90deg, var(--accent), var(--orange), var(--yellow));
   transition: width 0.18s ease;
 }
-.loading-pct{ margin-top: 10px; font-weight: 900; color: var(--accent); }
+.loading-meta{ margin-top: 10px; display: flex; justify-content: center;
+  align-items: baseline; gap: 14px; }
+.loading-pct{ font-weight: 900; color: var(--accent); }
+/* Elapsed seconds. A big layout is 260+ chunks at 35ms, so the bar can sit
+   on one number for a while -- the clock is what shows it is still alive. */
+.loading-time{ font-weight: 700; opacity: 0.65; font-variant-numeric: tabular-nums; }
 
 /* Graph: clearer axes & legend */
 .rt-graph-head{ align-items: center; }
