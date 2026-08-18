@@ -6190,7 +6190,9 @@ var configTotal = 0;
 // remains the source of truth: a different revision automatically invalidates
 // the cache. If localStorage is unavailable/corrupt, we simply fall back to
 // GETCFG — correctness first, speed second.
-const REMOTE_CFG_CACHE_PREFIX = 'keyes_mecanum_cfg_k4v1:';
+// Cache key is robot-neutral: this app serves every rxy robot, and each one's
+// entry is already namespaced by its own config revision.
+const REMOTE_CFG_CACHE_PREFIX = 'rxy_cfg_v1:';
 let pendingCfgVersion = '';
 
 function remoteCfgCacheKey() {
@@ -9862,7 +9864,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const srcEl = document.getElementById('fwSource');
   const modal = document.getElementById('fwModal');
   const btn = document.getElementById('fwBtn');
-  if (!srcEl || !modal || !btn) return;
+  if (!modal || !btn) return;
+  // No embedded firmware: hide the button rather than leaving one that does
+  // nothing when pressed. This app is robot-neutral, so there is no single
+  // firmware to show; a robot-specific fork that re-adds the fwSource block
+  // gets the dialog back with no further change.
+  if (!srcEl) { btn.style.display = 'none'; return; }
 
   // ^\r?\n, not ^\n: these files are CRLF on disk, so stripping only the \n
   // leaves a stray carriage return at the top of the shown — and copied — code.
