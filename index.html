@@ -321,7 +321,10 @@
      than adding a parallel system. The source is embedded in a text/plain
      script block rather than fetched, because this page is normally opened
      from file:// where fetch() is blocked -- a runtime read would fail exactly
-     where it is most needed. Regenerate with tools/embed-firmware.js. -->
+     where it is most needed. This app embeds no firmware -- it is robot-neutral --
+     so the block is absent and the Firmware button hides itself. The generator
+     lives with the robot that needs it, e.g. keystudio_4wd_mecanum_rxy's
+     tools/embed-firmware.cjs. -->
 <div id="fwModal" class="modal-bg">
   <div class="modal">
     <div class="modal-title">micro:bit Firmware</div>

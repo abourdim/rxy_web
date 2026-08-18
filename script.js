@@ -9859,7 +9859,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // The source is embedded in a text/plain script block rather than fetched:
 // this page is normally opened from file://, where fetch() is blocked, so a
 // runtime read would fail precisely when someone needs the code. Regenerate
-// the block with tools/embed-firmware.js after editing the firmware.
+// the block with the embed tool that lives in the robot's own repository,
+// e.g. keystudio_4wd_mecanum_rxy/tools/embed-firmware.cjs. This app ships no
+// firmware of its own.
 (function initFirmwareDialog() {
   const srcEl = document.getElementById('fwSource');
   const modal = document.getElementById('fwModal');
