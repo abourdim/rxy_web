@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.18';
+const APP_VERSION = 'v2.19';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -5794,11 +5794,44 @@ let _loadingIndeterminate = null;
 // ~9s, and without a moving clock a stalled link looks the same as a slow one.
 let _loadingClock = null;
 let _loadingStartedAt = 0;
+// Stamped when the layout transfer actually begins. Separate from
+// _loadingStartedAt because the overlay is already up during connect and
+// service discovery, and counting that dead time as transfer time would
+// understate the throughput.
+let _cfgTransferStartedAt = 0;
 
 function tickLoadingClock(){
   const el = $('#loadingTime');
+  if (el) el.textContent = Math.floor((Date.now() - _loadingStartedAt) / 1000) + tr('loadingSec');
+  updateLoadingRate();
+}
+
+function fmtBytes(n){
+  return n < 1024 ? `${Math.round(n)} B` : `${(n / 1024).toFixed(1)} kB`;
+}
+
+// Bytes transferred and throughput. Called from the 1s tick as well as on each
+// chunk, so the rate keeps updating during a gap instead of freezing on the
+// last chunk's value.
+function updateLoadingRate(){
+  const el = $('#loadingRate');
   if (!el) return;
-  el.textContent = Math.floor((Date.now() - _loadingStartedAt) / 1000) + tr('loadingSec');
+  const got = (typeof configBuffer === 'string') ? configBuffer.length : 0;
+  if (!got || !_cfgTransferStartedAt){ el.textContent = ''; return; }
+  // The expected total is derived from the average chunk actually received,
+  // not from a hardcoded chunk size: this firmware uses fixed 18-char chunks
+  // but the ESP32 sizes its chunks to the negotiated MTU, so any constant here
+  // would be wrong on one robot or the other.
+  const parts = [];
+  if (configTotal > 0 && configChunks > 0) {
+    const expected = Math.round((got / configChunks) * configTotal);
+    parts.push(`${fmtBytes(got)} ${tr('loadingOf')} ${fmtBytes(expected)}`);
+  } else {
+    parts.push(fmtBytes(got));
+  }
+  const secs = (Date.now() - _cfgTransferStartedAt) / 1000;
+  if (secs >= 0.5) parts.push(`${fmtBytes(got / secs)}/s`);
+  el.textContent = parts.join('  ·  ');
 }
 
 function showLoading(title = tr('loadingTitle'), sub = tr('loadingSub')){
@@ -5812,6 +5845,8 @@ function showLoading(title = tr('loadingTitle'), sub = tr('loadingSub')){
   const bar = $('#loadingBarFill'); if (bar) bar.style.width = '8%';
 
   _loadingStartedAt = Date.now();
+  _cfgTransferStartedAt = 0;
+  const rateEl = $('#loadingRate'); if (rateEl) rateEl.textContent = '';
   clearInterval(_loadingClock);
   tickLoadingClock();
   _loadingClock = setInterval(tickLoadingClock, 1000);
@@ -6515,6 +6550,7 @@ function processLine(line) {
   else if (line.startsWith('CFGBEGIN')) {
     // Firmware may append the chunk count: "CFGBEGIN 228". Anything that does
     // not send it still matches this branch, so configTotal simply stays 0.
+    _cfgTransferStartedAt = Date.now();
     const announced = parseInt(line.slice(8).trim(), 10);
     configTotal = Number.isFinite(announced) && announced > 0 ? announced : 0;
     console.log('[BLE] Config begin, expecting', configTotal || 'unknown', 'chunks');
@@ -6529,6 +6565,8 @@ function processLine(line) {
     cancelConfigRetry();
     configBuffer += line.substring(4);
     configChunks++;
+    // Covers a dropped CFGBEGIN: chunks alone still start the clock.
+    if (!_cfgTransferStartedAt) _cfgTransferStartedAt = Date.now();
     // With a known total this is a true fraction of the transfer. Without one
     // the old guess (12 + 4/chunk) is kept, but that pins at 90% after chunk 20
     // and a big layout can be 200+ chunks, which reads as a stalled bar.
@@ -6538,6 +6576,7 @@ function processLine(line) {
     } else {
       setLoadingProgress(Math.min(90, 12 + configChunks * 4), `${tr('loadingReceiving')} (${configChunks})`);
     }
+    updateLoadingRate();
     console.log('[BLE] Config chunk, total length:', configBuffer.length);
   }
   else if (line === 'CFGEND') {

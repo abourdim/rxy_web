@@ -2115,6 +2115,10 @@ body.theme-sunset .canvas { background: linear-gradient(135deg, #6a0572, #ab0a78
 /* Elapsed seconds. A big layout is 260+ chunks at 35ms, so the bar can sit
    on one number for a while -- the clock is what shows it is still alive. */
 .loading-time{ font-weight: 700; opacity: 0.65; font-variant-numeric: tabular-nums; }
+/* Byte counter and throughput. Deliberately quieter than the percentage: it
+   answers "is it moving and how fast", which matters most when it is slow. */
+.loading-rate{ margin-top: 6px; font-size: 0.85em; opacity: 0.5;
+  font-variant-numeric: tabular-nums; min-height: 1.1em; }
 
 /* Graph: clearer axes & legend */
 .rt-graph-head{ align-items: center; }
