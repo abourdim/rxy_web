@@ -1652,7 +1652,15 @@ body.theme-sunset .canvas { background: linear-gradient(135deg, #6a0572, #ab0a78
   transform: scale(0.95); 
   box-shadow: 0 4px 15px rgba(102,126,234,0.4), inset 0 2px 8px rgba(0,0,0,0.3);
 }
-.rt-button .icon { font-size: clamp(1.5rem, 5vw, 3rem); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.rt-button .icon { font-size: clamp(1.5rem, 5vw, 3rem); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  display: inline-block; }
+/* Spin the icon while the button is held. inline-block above is load-bearing:
+   transforms do not apply to an inline span. */
+@keyframes rt-icon-spin { to { transform: rotate(360deg); } }
+.rt-button.spinning .icon { animation: rt-icon-spin 0.7s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .rt-button.spinning .icon { animation: none; }
+}
 
 .rt-slider-wrap { 
   width: 100%; height: 100%; 

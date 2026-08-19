@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.17';
+const APP_VERSION = 'v2.18';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -7083,9 +7083,22 @@ function createRuntimeWidget(w) {
 
     case 'button': {
       const m = model || 'neo';
+      // An explicit icon wins. Without one the icon is picked by hashing the
+      // last character of the widget id, which is fine for a demo button but
+      // meaningless on a real control -- "Left motor" was landing on a random
+      // sparkle. `icon: ""` deliberately means no icon at all.
       const icons = ['🎯', '⚡', '🚀', '💥', '✨', '🎮', '🔥', '💫'];
-      const icon = icons[Math.abs(w.id.charCodeAt(w.id.length-1) || 0) % icons.length];
-      return `<button class="rt-button model-${m}"><span class="icon">${icon}</span><span>${label}</span></button>`;
+      const icon = (w.icon != null && w.icon !== '')
+        ? esc(String(w.icon))
+        : (w.icon === '' ? '' : icons[Math.abs(w.id.charCodeAt(w.id.length-1) || 0) % icons.length]);
+      const iconSpan = icon ? `<span class="icon">${icon}</span>` : '';
+      // `spin` turns the icon while the button is held -- a wheel that actually
+      // turns says what a jog button does better than any label.
+      const spin = w.spin ? ' data-spin="1"' : '';
+      // Build mode has always previewed w.color on a button, but the runtime
+      // render ignored it, so a colour set in CFG silently did nothing in Play.
+      const bg = w.color ? ` style="background:${esc(String(w.color))}"` : '';
+      return `<button class="rt-button model-${m}"${spin}${bg}>${iconSpan}<span>${label}</span></button>`;
     }
 
     case 'slider': {
@@ -7325,10 +7338,12 @@ function bindRuntimeWidget(el, w) {
         beepClick();
         send(`SET ${w.id} 1`); 
         btn.style.transform = 'scale(0.9)'; 
+        if (btn.dataset.spin) btn.classList.add('spinning');
       };
       const release = () => {
         if (!btnPressed) return;
         btn.style.transform = '';
+        btn.classList.remove('spinning');
         btnPressed = false;
         // Runtime controls should release immediately; artificial debounce on
         // actuator buttons only adds lag and can leave a command active while
