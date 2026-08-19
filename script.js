@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.19';
+const APP_VERSION = 'v2.20';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -7132,8 +7132,10 @@ function createRuntimeWidget(w) {
         : (w.icon === '' ? '' : icons[Math.abs(w.id.charCodeAt(w.id.length-1) || 0) % icons.length]);
       const iconSpan = icon ? `<span class="icon">${icon}</span>` : '';
       // `spin` turns the icon while the button is held -- a wheel that actually
-      // turns says what a jog button does better than any label.
-      const spin = w.spin ? ' data-spin="1"' : '';
+      // turns says what a jog button does better than any label. Negative spins
+      // anticlockwise, so a left/right pair can mirror each other the way the
+      // two wheels do. Any truthy value spins; only the sign is read here.
+      const spin = w.spin ? ` data-spin="${Number(w.spin) < 0 ? -1 : 1}"` : '';
       // Build mode has always previewed w.color on a button, but the runtime
       // render ignored it, so a colour set in CFG silently did nothing in Play.
       const bg = w.color ? ` style="background:${esc(String(w.color))}"` : '';

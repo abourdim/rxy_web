@@ -1658,6 +1658,8 @@ body.theme-sunset .canvas { background: linear-gradient(135deg, #6a0572, #ab0a78
    transforms do not apply to an inline span. */
 @keyframes rt-icon-spin { to { transform: rotate(360deg); } }
 .rt-button.spinning .icon { animation: rt-icon-spin 0.7s linear infinite; }
+/* data-spin="-1" turns the other way, so a left/right pair mirrors. */
+.rt-button.spinning[data-spin="-1"] .icon { animation-direction: reverse; }
 @media (prefers-reduced-motion: reduce) {
   .rt-button.spinning .icon { animation: none; }
 }
