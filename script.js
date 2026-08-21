@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.20';
+const APP_VERSION = 'v2.21';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -1852,6 +1852,11 @@ function modelOptionsForType(t){
       { v:'bar',  name:'Bar' },
       { v:'ring', name:'Ring' }
     ];
+    case 'dpad': return [
+      { v:'classic',   name:'Classic (4 way)' },
+      { v:'leftright', name:'Left / Right only' },
+      { v:'mecanum',   name:'Mecanum (8 way + stop)' }
+    ];
     case 'joystick': return [
       { v:'classic', name:'Classic' },
       { v:'neon',    name:'Neon' },
@@ -2336,7 +2341,7 @@ function generateDemoCode(cfg) {
         }
     }`).join('\n');
 
-  let dpadCode = dpads.map(w => `    // D-Pad: ${w.label || w.id} (val = "direction state", direction: up/down/left/right${w.model === 'mecanum' ? '/upleft/upright/downleft/downright/stop' : ''}, state: 1=pressed, 0=released)
+  let dpadCode = dpads.map(w => `    // D-Pad: ${w.label || w.id} (val = "direction state", direction: ${w.model === 'mecanum' ? 'up/down/left/right/upleft/upright/downleft/downright/stop' : w.model === 'leftright' ? 'left/right' : 'up/down/left/right'}, state: 1=pressed, 0=released)
     if (id == "${w.id}") {
         let parts = val.split(" ")
         let dir = parts[0]
@@ -7270,6 +7275,16 @@ function createRuntimeWidget(w) {
         <button class="dpad-btn" data-dir="downright" type="button">&#8600;</button>
       </div>`;
       }
+      // Two buttons, steering only. Sends the same "SET <id> <dir> <0|1>" as
+      // every other model -- a firmware that already handles left/right needs
+      // no change, and one that expects all four simply never sees up/down.
+      if (m === 'leftright') {
+        return `<div class="rt-dpad model-leftright">
+        <button class="dpad-btn" data-dir="left" type="button">&#9664;</button>
+        <button class="dpad-btn" data-dir="right" type="button">&#9654;</button>
+      </div>`;
+      }
+
       return `<div class="rt-dpad">
         <div></div>
         <button class="dpad-btn" data-dir="up" type="button">&#9650;</button>

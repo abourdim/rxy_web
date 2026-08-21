@@ -2769,6 +2769,14 @@ body.theme-sunset { --bg: #2d1b2d; --surface: #4a2c4a; --card: #6b3a6b; --accent
   max-height: 100%;
   margin: auto;
 }
+/* Two buttons side by side. The base .rt-dpad forces a square 3x3 grid, which
+   would squeeze a pair of steering buttons into the middle third of the
+   widget; this overrides both the grid and the aspect ratio. */
+.rt-dpad.model-leftright {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+  aspect-ratio: auto;
+}
 .rt-dpad > * {
   min-width: 0;
   min-height: 0;
