@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.21';
+const APP_VERSION = 'v2.22';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -755,7 +755,7 @@ const I18N = {
     },
     themeNames: { dark:"Dark", ocean:"Ocean", space:"Space", candy:"Fire", forest:"Forest" },
     themeTitles: { dark:"Dark theme", ocean:"Ocean theme", space:"Space theme", candy:"Fire theme", forest:"Forest theme" },
-    widgets: { button:"Button", slider:"Slider", toggle:"Switch", joystick:"Joystick", dpad:"D-Pad", xypad:"XY Pad", led:"Light", label:"Label", group:"Group", separator:"Line", gauge:"Gauge", graph:"Graph", battery:"Battery", timer:"Timer" },
+    widgets: { button:"Button", slider:"Slider", toggle:"Switch", joystick:"Joystick", dpad:"D-Pad", dpad_leftright:"Turn Pad", xypad:"XY Pad", led:"Light", label:"Label", group:"Group", separator:"Line", gauge:"Gauge", graph:"Graph", battery:"Battery", timer:"Timer" },
     propsTitle: "🛠️ Widget Properties",
     propsCollapseTitle: "Collapse",
     propsEmptyTitle: "Nothing selected",
@@ -876,7 +876,7 @@ const I18N = {
     },
     themeNames: { dark:"Sombre", ocean:"Océan", space:"Espace", candy:"Feu", forest:"Forêt" },
     themeTitles: { dark:"Thème sombre", ocean:"Thème océan", space:"Thème espace", candy:"Thème feu", forest:"Thème forêt" },
-    widgets: { button:"Bouton", slider:"Curseur", toggle:"Interrupteur", joystick:"Joystick", dpad:"Croix directionnelle", xypad:"Pavé XY", led:"Lumière", label:"Texte", group:"Groupe", separator:"Ligne", gauge:"Jauge", graph:"Graphique", battery:"Batterie", timer:"Minuteur" },
+    widgets: { button:"Bouton", slider:"Curseur", toggle:"Interrupteur", joystick:"Joystick", dpad:"Croix directionnelle", dpad_leftright:"Pavé rotation", xypad:"Pavé XY", led:"Lumière", label:"Texte", group:"Groupe", separator:"Ligne", gauge:"Jauge", graph:"Graphique", battery:"Batterie", timer:"Minuteur" },
     propsTitle: "🛠️ Propriétés",
     propsCollapseTitle: "Réduire",
     propsEmptyTitle: "Rien de sélectionné",
@@ -997,7 +997,7 @@ const I18N = {
     },
     themeNames: { dark:"داكن", ocean:"المحيط", space:"الفضاء", candy:"النار", forest:"الغابة" },
     themeTitles: { dark:"السمة الداكنة", ocean:"سمة المحيط", space:"سمة الفضاء", candy:"سمة النار", forest:"سمة الغابة" },
-    widgets: { button:"زر", slider:"منزلق", toggle:"مفتاح", joystick:"عصا التحكم", dpad:"لوحة اتجاه", xypad:"لوحة XY", led:"ضوء", label:"تسمية", group:"مجموعة", separator:"خط فاصل", gauge:"مقياس", graph:"رسم بياني", battery:"بطارية", timer:"مؤقت" },
+    widgets: { button:"زر", slider:"منزلق", toggle:"مفتاح", joystick:"عصا التحكم", dpad:"لوحة اتجاه", dpad_leftright:"لوحة الدوران", xypad:"لوحة XY", led:"ضوء", label:"تسمية", group:"مجموعة", separator:"خط فاصل", gauge:"مقياس", graph:"رسم بياني", battery:"بطارية", timer:"مؤقت" },
     propsTitle: "🛠️ خصائص الأداة",
     propsCollapseTitle: "طي",
     propsEmptyTitle: "لم يتم اختيار شيء",
@@ -1198,7 +1198,10 @@ function setLang(lang){
   // Widget palette names
   document.querySelectorAll(".palette-item[data-type]").forEach(item => {
     const nameEl = item.querySelector(".palette-name");
-    const key = item.dataset.type;
+    // A preset entry (data-model) shares its type with the plain one, so the
+    // type name would overwrite its label and leave two identical "D-Pad"
+    // tiles. Those carry their own key instead.
+    const key = item.dataset.model ? `${item.dataset.type}_${item.dataset.model}` : item.dataset.type;
     if (nameEl && t.widgets[key]) nameEl.textContent = t.widgets[key];
   });
 
@@ -2653,6 +2656,10 @@ try{ placeToolbarWhereHintWas(); }catch(e){}
       $$('.palette-item').forEach(x => x.classList.remove('selected'));
       p.classList.add('selected');
       state.selectedType = p.dataset.type;
+      // A palette entry may pin a model, so one widget type can appear more
+      // than once with different presets -- "Turn Pad" is a dpad locked to the
+      // two-button model. Empty for the plain entries, which keep the default.
+      state.selectedModel = p.dataset.model || '';
       toast(tr('toast.widgetSelected', {icon: ICONS[state.selectedType]}), 'success');
     };
   });
@@ -2742,7 +2749,9 @@ try{ placeToolbarWhereHintWas(); }catch(e){}
       let x = Math.max(0, Math.min((e.clientX - rect.left) / z - w/2, logicalW - w));
       let y = Math.max(0, Math.min((e.clientY - rect.top) / z - h/2, logicalH - h));
       if (state.gridSnap) { x = snapToGrid(x); y = snapToGrid(y); }
-      const base = applyWidgetDefaults({ id: `${state.selectedType}${state.nextId++}`, t: state.selectedType, x, y, w, h, label: '' });
+      const seed = { id: `${state.selectedType}${state.nextId++}`, t: state.selectedType, x, y, w, h, label: '' };
+      if (state.selectedModel) seed.model = state.selectedModel;
+      const base = applyWidgetDefaults(seed);
       state.widgets.push(base);
       renderWidgets();
       toast(tr('toast.widgetAdded', {icon: ICONS[state.selectedType]}), 'success');
