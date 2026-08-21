@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.22';
+const APP_VERSION = 'v2.23';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -2046,6 +2046,66 @@ async function processWriteQueue() {
   }
 }
 
+// ── REMEMBERED CONTROL VALUES ────────────────────────────────────────────
+// Some robots have nowhere to keep a setting. A micro:bit has no writable
+// storage a MakeCode program can reach, so a calibration like wheel trim dies
+// with the battery. The app remembers it instead and plays it back on connect.
+//
+// Opt-in from the ROBOT, never guessed here: only widgets whose CFG entry
+// carries `restore` are saved and replayed. That matters for safety as much as
+// tidiness -- replaying a Mode select could put a robot into a self-driving
+// mode the moment it connects, and replaying a Level select would swap the
+// layout out from under the restore itself. The robot owns its layout, so the
+// robot decides what is safe to bring back.
+//
+// Keyed by BluetoothDevice.id, so two identical robots keep their own trim.
+const CTRL_STORE_PREFIX = 'rxy_ctrl_v1:';
+
+function ctrlStoreKey() {
+  const id = state.ble?.device?.id;
+  return id ? CTRL_STORE_PREFIX + id : null;
+}
+
+function ctrlRestorable(id) {
+  const w = (state.config?.widgets || []).find(x => x.id === id);
+  return !!(w && w.restore);
+}
+
+function ctrlSave(id, val) {
+  const key = ctrlStoreKey();
+  if (!key || !ctrlRestorable(id)) return;
+  try {
+    const all = JSON.parse(localStorage.getItem(key) || '{}');
+    all[id] = val;
+    localStorage.setItem(key, JSON.stringify(all));
+  } catch (e) { /* storage full or blocked: remembering is a convenience */ }
+}
+
+function ctrlRestoreAll() {
+  const key = ctrlStoreKey();
+  if (!key) return;
+  let all;
+  try { all = JSON.parse(localStorage.getItem(key) || '{}'); }
+  catch (e) { return; }
+  const widgets = (state.config?.widgets || []).filter(w => w.restore && all[w.id] != null);
+  if (!widgets.length) return;
+  // Spaced out rather than blasted: these go over the same link the layout
+  // just used, and a burst of writes straight after CFGEND is what used to
+  // wedge the BLE stack on reconnect.
+  let i = 0;
+  const step = () => {
+    if (i >= widgets.length || !state.ble.connected) return;
+    const w = widgets[i++];
+    const val = all[w.id];
+    updateRuntimeWidget(w.id, val);   // move the control itself
+    state.values[w.id] = val;
+    send(`SET ${w.id} ${val}`);       // and tell the robot
+    setTimeout(step, 60);
+  };
+  console.log('[BLE] Restoring', widgets.length, 'remembered control values');
+  setTimeout(step, 300);
+}
+
 // Public send function - queues message and triggers processing
 function send(msg) {
   if (!state.ble.connected) return;
@@ -2053,6 +2113,11 @@ function send(msg) {
   // Sanitize
   msg = String(msg || '').replace(/[\r\n]+/g, '').trim();
   if (!msg) return;
+
+  // One choke point for every control: catching it here means each widget type
+  // does not need its own save call, and a type added later is covered free.
+  const m = /^SET (\S+) (.+)$/.exec(msg);
+  if (m) ctrlSave(m[1], m[2]);
 
   // Always update pending (latest value wins for continuous controls like joystick)
   bleSend.pendingMsg = msg;
@@ -6431,6 +6496,10 @@ function activateRemoteConfig(config, fromCache = false) {
   state.deviceConfig = cloneSerializable(state.config);
   console.log(fromCache ? '[BLE] Config restored from cache:' : '[BLE] Config decoded:', state.config);
   renderRuntime();
+  // Both paths land here -- a fresh transfer and a cache hit alike -- so the
+  // remembered values are replayed exactly once per connection, after the
+  // controls they belong to actually exist.
+  ctrlRestoreAll();
   setLoadingProgress(100, tr('loadingReady'));
   state._allowLoadingOverlay = false;
   hideLoading();
