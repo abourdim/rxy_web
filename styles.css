@@ -6689,3 +6689,16 @@ body.runtime-fullscreen .runtime-view.active{
 .qr-url { display: block; margin-top: 18px; color: var(--accent); font-weight: 700; font-size: 1rem; word-break: break-all; text-decoration: none; }
 .qr-url:hover { text-decoration: underline; }
 .qr-close-hint { margin-top: 14px !important; color: var(--text-dim); font-size: 0.85rem !important; }
+
+/* ── Radar ──────────────────────────────────────────────────────────
+   Green on near-black whatever the theme. This is the one widget that is
+   quoting an instrument rather than fitting in, and a radar that is not
+   green does not read as a radar. */
+.rt-radar { --radar-grid: rgba(74,222,128,0.32); --radar-beam: rgba(74,222,128,0.95);
+  width: 100%; height: 100%; background: #04140b; border-radius: 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overflow: hidden; position: relative; }
+.rt-radar svg { width: 100%; height: 100%; display: block; }
+.rt-radar-hud { fill: #4ade80; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 19px; letter-spacing: 0.05em; }
+.rt-radar-tick { fill: rgba(74,222,128,0.75); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px; }
+.rt-radar-label { position: absolute; bottom: 4px; left: 10px; color: rgba(74,222,128,0.75); font-size: 0.72rem; font-weight: 700; }

@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.26';
+const APP_VERSION = 'v2.27';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -1546,7 +1546,7 @@ function importLayoutJsonFile(file){
 
 
 const ICONS = { button:'👆', slider:'🎚️', toggle:'🔘', joystick:'🕹️', led:'💡', label:'🏷️', group:'▣', separator:'━', graph:'📈', gauge:'🧭', dpad:'✛', xypad:'📍', battery:'🔋', timer:'⏱️', image:'🖼️', select:'🔽', editfield:'⌨️', sound:'🔊', notification:'🔔' };
-const SIZES = { button:[100,100], slider:[90,180], toggle:[100,100], joystick:[140,140], led:[80,80], label:[200,50], group:[320,220], separator:[240,40], graph:[300,150], gauge:[140,160], dpad:[140,140], xypad:[150,150], battery:[80,100], timer:[120,80], image:[100,100], select:[160,70], editfield:[200,70], sound:[90,90], notification:[90,90] };
+const SIZES = { button:[100,100], slider:[90,180], toggle:[100,100], joystick:[140,140], led:[80,80], label:[200,50], group:[320,220], separator:[240,40], graph:[300,150], gauge:[140,160], dpad:[140,140], xypad:[150,150], battery:[80,100], timer:[120,80], image:[100,100], select:[160,70], editfield:[200,70], radar:[280,170], sound:[90,90], notification:[90,90] };
 
 // Themes
 const THEMES = {
@@ -1832,6 +1832,14 @@ function applyWidgetDefaults(w){
     if (!w.options) w.options = 'Option 1,Option 2,Option 3';
   }
 
+  // Radar defaults. `max` is the range beyond which a reading counts as
+  // "nothing there" rather than a detection -- the same number the robot
+  // reports when no echo comes back.
+  if (w.t === 'radar'){
+    if (w.max == null) w.max = 200;
+    if (!w.model) w.model = 'dots';
+  }
+
   // Edit field defaults
   if (w.t === 'editfield'){
     if (w.placeholder == null) w.placeholder = 'Type here...';
@@ -1889,6 +1897,10 @@ function modelOptionsForType(t){
       { v:'classic', name:'Classic' },
       { v:'neon',    name:'Neon' },
       { v:'min',     name:'Minimal' }
+    ];
+    case 'radar': return [
+      { v:'dots', name:'Dots' },
+      { v:'rays', name:'Rays' }
     ];
     case 'label': return [
       { v:'plain', name:'Plain' },
@@ -7196,6 +7208,113 @@ function syncRuntimeToBuild() {
 // The web app does NOT create a second gauge. It only mirrors that source
 // value into the real configured gauge for instant visual feedback; firmware
 // UPD packets remain authoritative and keep other clients compatible too.
+
+// ── RADAR ───────────────────────────────────────────────────────────────
+// A sweep scope, fed by TWO widgets the robot already reports: an angle and a
+// distance. It invents no data of its own -- `source` names the distance
+// widget, `angleSource` the servo one, exactly the way a gauge mirrors a
+// slider, so a layout can point it at whatever those ids happen to be.
+//
+// Readings persist and fade, because one reading is a number and a fading
+// trail of them is a picture of the room.
+const RADAR_FADE_MS = 5000;
+const RADAR_MAX_BLIPS = 240;
+const radarStore = new Map();   // widget id -> { angle, cm, blips:[{a,cm,t}] }
+
+function radarState(id) {
+  if (!radarStore.has(id)) radarStore.set(id, { angle: 90, cm: null, blips: [] });
+  return radarStore.get(id);
+}
+
+// Deliberately NOT linear, and shared with the rover's own little scope so the
+// two agree about what "close" looks like: the first 10cm gets a quarter of
+// the radius. On a linear scale everything interesting piles up at the origin.
+function radarRadius(cm) {
+  if (cm <= 0) return 0;
+  if (cm < 10) return (cm / 10) * 40;
+  if (cm < 30) return 40 + ((cm - 10) / 20) * 40;
+  if (cm < 100) return 80 + ((cm - 30) / 70) * 80;
+  return 160;
+}
+
+// 0 deg = right, 90 = up, 180 = left, around an origin at (200,200).
+function radarPolar(deg, r) {
+  const rad = deg * Math.PI / 180;
+  return { x: 200 + r * Math.cos(rad), y: 200 - r * Math.sin(rad) };
+}
+
+function radarBlipColor(cm) {
+  return cm < 10 ? '#ff4d4d' : cm < 30 ? '#ffb020' : '#4ade80';
+}
+
+// Any incoming value may belong to some radar's angle or distance source.
+// Called before the DOM lookup in updateRuntimeWidget, so a radar still works
+// when the widget feeding it is not itself on the current panel.
+function feedRadars(sourceId, value) {
+  if (!state.config?.widgets) return;
+  const n = parseFloat(value);
+  if (!isFinite(n)) return;
+  state.config.widgets.forEach(w => {
+    if (w.t !== 'radar') return;
+    const st = radarState(w.id);
+    let touched = false;
+    if (w.angleSource && w.angleSource === sourceId) { st.angle = n; touched = true; }
+    if (w.source && w.source === sourceId) {
+      st.cm = n;
+      // A "nothing bounced back" reading is not a detection. Plotting it
+      // would paint a wall at maximum range right around an empty room.
+      const max = Number(w.max) || 200;
+      if (n > 0 && n < max) {
+        st.blips.push({ a: st.angle, cm: n, t: performance.now() });
+        while (st.blips.length > RADAR_MAX_BLIPS) st.blips.shift();
+      }
+      touched = true;
+    }
+    if (touched) drawRadarWidget(w);
+  });
+}
+
+function drawRadarWidget(w) {
+  const el = document.querySelector(`.rt-widget[data-id="${w.id}"] .rt-radar`);
+  if (!el) return;
+  const st = radarState(w.id);
+  const now = performance.now();
+  st.blips = st.blips.filter(b => now - b.t <= RADAR_FADE_MS);
+
+  const beam = el.querySelector('[data-role="radarBeam"]');
+  if (beam) {
+    const p = radarPolar(st.angle, 160);
+    beam.setAttribute('x2', p.x.toFixed(1));
+    beam.setAttribute('y2', p.y.toFixed(1));
+  }
+  const marks = el.querySelector('[data-role="radarBlips"]');
+  if (marks) {
+    const rays = (w.model || 'dots') === 'rays';
+    marks.innerHTML = st.blips.map(b => {
+      const op = Math.max(0, 1 - (now - b.t) / RADAR_FADE_MS).toFixed(2);
+      const p = radarPolar(b.a, radarRadius(b.cm));
+      const c = radarBlipColor(b.cm);
+      return rays
+        ? `<line x1="200" y1="200" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="${c}" stroke-width="${b.cm < 10 ? 1.6 : 0.9}" stroke-opacity="${op}" stroke-linecap="round"/>`
+        : `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${b.cm < 10 ? 3.2 : 2.6}" fill="${c}" opacity="${op}"/>`;
+    }).join('');
+  }
+  const hudA = el.querySelector('[data-role="radarAngle"]');
+  if (hudA) hudA.textContent = `ANGLE ${Math.round(st.angle)}°`;
+  const hudD = el.querySelector('[data-role="radarDist"]');
+  if (hudD) hudD.textContent = `DIST ${st.cm == null ? '—' : Math.round(st.cm)} cm`;
+}
+
+// Blips fade on a clock, not on new data: a rover that has stopped sweeping
+// must still show its trail decaying rather than freezing mid-fade.
+function startRadarFade(w) {
+  const timer = setInterval(() => {
+    const st = radarStore.get(w.id);
+    if (st && st.blips.length) drawRadarWidget(w);
+  }, 250);
+  registerRuntimeBindingCleanup(() => clearInterval(timer));
+}
+
 function getRuntimeWidgetValue(w) {
   if (Object.prototype.hasOwnProperty.call(state.values, w.id)) return String(state.values[w.id]);
   if (w.t === 'gauge' && w.source) {
@@ -7325,6 +7444,31 @@ function createRuntimeWidget(w) {
     case 'label': {
       const m = model || 'plain';
       return `<div class="rt-label-text model-${m}">${val || label}</div>`;
+    }
+
+    case 'radar': {
+      // Arcs as real SVG paths, not sampled points: this is a browser, not a
+      // 128x32 panel, so there is no reason to approximate a curve.
+      const ring = r => `<path d="M${200 - r},200 A${r},${r} 0 0 1 ${200 + r},200" fill="none" stroke="var(--radar-grid)" stroke-width="1"/>`;
+      const spoke = deg => {
+        const p = radarPolar(deg, 160);
+        return `<line x1="200" y1="200" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="var(--radar-grid)" stroke-width="1"/>`;
+      };
+      return `<div class="rt-radar model-${esc(model || 'dots')}">
+        <svg viewBox="0 0 400 215" preserveAspectRatio="xMidYMid meet">
+          ${[40, 80, 160].map(ring).join('')}
+          ${[0, 45, 90, 135, 180].map(spoke).join('')}
+          <line x1="20" y1="200" x2="380" y2="200" stroke="var(--radar-grid)" stroke-width="1.5"/>
+          <line data-role="radarBeam" x1="200" y1="200" x2="200" y2="40" stroke="var(--radar-beam)" stroke-width="2.5" stroke-linecap="round"/>
+          <g data-role="radarBlips"></g>
+          <text x="24" y="26" class="rt-radar-hud" data-role="radarAngle">ANGLE 90°</text>
+          <text x="24" y="48" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>
+          <text x="240" y="214" text-anchor="middle" class="rt-radar-tick">10</text>
+          <text x="280" y="214" text-anchor="middle" class="rt-radar-tick">30</text>
+          <text x="352" y="214" text-anchor="middle" class="rt-radar-tick">100 cm</text>
+        </svg>
+        <span class="rt-radar-label">${label}</span>
+      </div>`;
     }
 
     case 'gauge': {
@@ -7535,6 +7679,10 @@ function bindRuntimeWidget(el, w) {
         if (btnPressed && state.ble.connected) sendReliable(`SET ${w.id} 0`);
         btnPressed = false;
       });
+      break;
+    case 'radar':
+      startRadarFade(w);
+      drawRadarWidget(w);
       break;
     case 'slider':
       let sliderEl = el.querySelector('.rt-slider');
@@ -8324,6 +8472,10 @@ function updateRuntimeWidget(id, val) {
     showRuntimeNotification(w, val);
     return;
   }
+
+  // Before the DOM lookup: a radar's angle or distance source may not be on
+  // the panel at all, and the radar must still move when it is not.
+  feedRadars(id, val);
 
   const el = document.querySelector(`.rt-widget[data-id="${id}"]`);
   if (!el) {
