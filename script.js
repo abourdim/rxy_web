@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.23';
+const APP_VERSION = 'v2.24';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -2058,12 +2058,23 @@ async function processWriteQueue() {
 // layout out from under the restore itself. The robot owns its layout, so the
 // robot decides what is safe to bring back.
 //
-// Keyed by BluetoothDevice.id, so two identical robots keep their own trim.
+// Keyed per robot, so two identical ones keep their own trim.
+//
+// By NAME first, id second -- the reverse of what looks natural.
+// BluetoothDevice.id is an opaque per-origin handle the browser is free to
+// mint fresh for a new document, and on a file:// page it does exactly that:
+// an id-keyed record is lost by the very reload it exists to survive. A
+// micro:bit's name is derived from its MAC, so it is both stable across
+// reloads and still different for two robots on the bench. Falls back to the
+// id for a peripheral that advertises no name at all.
 const CTRL_STORE_PREFIX = 'rxy_ctrl_v1:';
 
 function ctrlStoreKey() {
-  const id = state.ble?.device?.id;
-  return id ? CTRL_STORE_PREFIX + id : null;
+  const d = state.ble?.device;
+  if (!d) return null;
+  const name = String(d.name || '').trim();
+  const tag = name || d.id;
+  return tag ? CTRL_STORE_PREFIX + tag : null;
 }
 
 function ctrlRestorable(id) {
@@ -2133,6 +2144,10 @@ function sendReliable(msg) {
   if (!state.ble.connected) return;
   msg = String(msg || '').replace(/[\r\n]+/g, '').trim();
   if (!msg) return;
+  // Same remember-this choke point as send(). Without it a control that
+  // switched to this path would quietly stop being restored on connect.
+  const m = /^SET (\S+) (.+)$/.exec(msg);
+  if (m) ctrlSave(m[1], m[2]);
   bleSend.queue.push(msg);
   processWriteQueue();
 }
@@ -7470,7 +7485,12 @@ function bindRuntimeWidget(el, w) {
         if (btnPressed) return;
         btnPressed = true;
         beepClick();
-        send(`SET ${w.id} 1`); 
+        // Reliable, not send(): send() keeps only the LATEST message, so a
+        // quick tap whose press and release land in the same write window
+        // loses the "1" entirely and the press never reaches the robot. It
+        // goes unnoticed on a STOP button you hold down, and is glaring on a
+        // step button where one tap must mean exactly one step.
+        sendReliable(`SET ${w.id} 1`); 
         btn.style.transform = 'scale(0.9)'; 
         if (btn.dataset.spin) btn.classList.add('spinning');
       };
@@ -7482,12 +7502,12 @@ function bindRuntimeWidget(el, w) {
         // Runtime controls should release immediately; artificial debounce on
         // actuator buttons only adds lag and can leave a command active while
         // switching views.
-        send(`SET ${w.id} 0`);
+        sendReliable(`SET ${w.id} 0`);
       };
       btn.onmousedown = btn.ontouchstart = press;
       btn.onmouseup = btn.onmouseleave = btn.ontouchend = release;
       registerRuntimeBindingCleanup(() => {
-        if (btnPressed && state.ble.connected) send(`SET ${w.id} 0`);
+        if (btnPressed && state.ble.connected) sendReliable(`SET ${w.id} 0`);
         btnPressed = false;
       });
       break;
