@@ -77,12 +77,36 @@ panel and export the result.
 ## Widget types
 
 `button` `slider` `toggle` `joystick` `dpad` `xypad` `led` `label` `gauge`
-`graph` `battery` `timer` `image` `select` `editfield` `sound` `notification`
-`group` `separator`
+`graph` `radar` `battery` `timer` `image` `select` `editfield` `sound`
+`notification` `group` `separator`
 
 `group` and `separator` are visual only — they carry no state and are never
 `SET` or `UPD` targets, so a client that does not know them can ignore the
 grouping metadata safely.
+
+### radar
+
+A sweep scope, for a robot with a distance sensor on a moving head. It reads
+**two** widgets rather than being sent values of its own:
+
+| property | names the widget carrying |
+|---|---|
+| `source` | the distance, in cm |
+| `angleSource` | the head angle, 0–180 |
+| `max` | beyond this a reading means "nothing there" (default 200) |
+| `model` | `dots` or `rays` |
+
+Rings at 10/30/100 cm, a beam on the live angle, and detections that persist
+and fade over five seconds — so a sweep builds a picture of the room instead
+of flashing one number. Blips take their colour from the threshold: red under
+10 cm, amber under 30, green beyond.
+
+Readings at or past `max` are **not** plotted. That value is the robot's "no
+echo", and drawing it would paint a wall at full range around an empty room.
+
+The distance scale is deliberately not linear — the first 10 cm takes a
+quarter of the radius — and matches the scope the dfrobot-rover draws on its
+own OLED, so the two displays agree about what "close" looks like.
 
 ## History
 
