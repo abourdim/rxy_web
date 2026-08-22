@@ -6678,3 +6678,14 @@ body.runtime-fullscreen .runtime-view.active{
 }
 .modal-btn.fw-mini { flex: 0 0 auto; padding: 8px 14px; font-size: 13px; }
 #fwCode { max-height: 42vh; white-space: pre; word-break: normal; }
+
+/* ── Share / QR ─────────────────────────────────────────────────────
+   The QR sits on a WHITE plate whatever the theme: a scanner needs light
+   quiet zone and dark modules, and inverting it -- which a dark-themed
+   panel would do -- is the one thing guaranteed to stop it scanning. */
+.share-content { max-width: 420px; margin: 0 auto; }
+.qr-frame { background: #fff; border-radius: 18px; padding: 14px; display: inline-block; line-height: 0; box-shadow: 0 10px 34px rgba(0,0,0,0.45); }
+.qr-img { width: min(62vw, 260px); height: auto; display: block; }
+.qr-url { display: block; margin-top: 18px; color: var(--accent); font-weight: 700; font-size: 1rem; word-break: break-all; text-decoration: none; }
+.qr-url:hover { text-decoration: underline; }
+.qr-close-hint { margin-top: 14px !important; color: var(--text-dim); font-size: 0.85rem !important; }

@@ -16,6 +16,27 @@ Bluetooth. Press **Connect**, pick your robot, and its panel appears.
 Web Bluetooth needs a secure context, so serve the folder over `localhost` or
 HTTPS rather than opening it from a network share.
 
+### Sharing it
+
+**⧉ Share** in the header shows a QR code of
+<https://abourdim.github.io/rxy_web/>, so the next person can point a phone at
+your screen instead of typing a URL on a tablet keyboard.
+
+The code is **baked into `index.html`**, not generated at runtime: the address
+is a constant, so an encoder would be code to maintain for a fixed picture.
+It always encodes the published address, never `location.href` — demonstrate
+this from `file://` or a laptop's `localhost` and a generated code would hand
+someone a link their phone cannot reach.
+
+Regenerate it only if that address changes:
+
+```bash
+python tools/make-qr.py
+```
+
+It re-splices the SVG between the `qr:begin`/`qr:end` markers and refuses to
+write if the path it produced does not reproduce the QR matrix exactly.
+
 ## Robots that speak this protocol
 
 | robot | firmware |

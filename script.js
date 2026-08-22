@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.24';
+const APP_VERSION = 'v2.25';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -764,6 +764,11 @@ const I18N = {
     arrange: "📐 Arrange", arrangeDone: "✓ Done",
     reloadConfig: "↻ Reload Config",
     reloadConfigTitle: "Clear this device's cached config and fetch it again from the micro:bit",
+    share: "⧉ Share",
+    shareTitleBtn: "Show a QR code so someone else can open this app",
+    shareHeading: "Share this app",
+    shareHint: "Scan to open the controller on another phone or tablet.",
+    shareClose: "Tap anywhere to close",
     fullscreen: "⛶ Fullscreen",
     fullscreenExit: "⛶ Exit Fullscreen",
     arrangeHint: '👆 Drag widgets to rearrange • Tap "Done" when finished',
@@ -883,6 +888,11 @@ const I18N = {
     propsEmptyHint: "Touche un widget sur le tableau pour changer sa couleur, son texte et sa taille.",
     backToBuild: "← Retour à la Construction",
     arrange: "📐 Organiser", arrangeDone: "✓ Terminé",
+    share: "⧉ Partager",
+    shareTitleBtn: "Afficher un QR code pour ouvrir l'app sur un autre appareil",
+    shareHeading: "Partager cette app",
+    shareHint: "Scanne pour ouvrir la télécommande sur un autre téléphone ou une tablette.",
+    shareClose: "Touche l'écran pour fermer",
     reloadConfig: "↻ Recharger config",
     reloadConfigTitle: "Effacer la configuration en cache de cet appareil et la relire depuis le micro:bit",
     fullscreen: "⛶ Plein écran",
@@ -1004,6 +1014,11 @@ const I18N = {
     propsEmptyHint: "اضغط على أي أداة في اللوحة لتغيير لونها ونصها وحجمها.",
     backToBuild: "→ العودة للبناء",
     arrange: "📐 ترتيب", arrangeDone: "✓ تم",
+    share: "⧉ مشاركة",
+    shareTitleBtn: "إظهار رمز QR لفتح التطبيق على جهاز آخر",
+    shareHeading: "شارك هذا التطبيق",
+    shareHint: "امسح الرمز لفتح جهاز التحكم على هاتف أو جهاز لوحي آخر.",
+    shareClose: "المس أي مكان للإغلاق",
     reloadConfig: "↻ إعادة تحميل الإعداد",
     reloadConfigTitle: "مسح إعداد هذا الجهاز من الذاكرة المؤقتة وقراءته من micro:bit من جديد",
     fullscreen: "⛶ ملء الشاشة",
@@ -1176,6 +1191,16 @@ function setLang(lang){
   // Runtime connect screen
   const ct = document.querySelector(".connect-text"); if (ct) ct.textContent = t.runtimeConnectText;
   const cb = $("#connectBtn"); if (cb) cb.textContent = t.runtimeConnectBtn;
+  const shb = $("#shareBtn");
+  if (shb) {
+    shb.textContent = t.share || "⧉ Share";
+    shb.title = t.shareTitleBtn || "Show a QR code so someone else can open this app";
+  }
+  const setTxt = (sel, val) => { const el = $(sel); if (el && val) el.textContent = val; };
+  setTxt("#shareTitle", t.shareHeading);
+  setTxt("#shareHint", t.shareHint);
+  setTxt("#shareClose", t.shareClose);
+
   const rcb = $("#reloadConfigBtn");
   if (rcb) {
     rcb.textContent = t.reloadConfig || "↻ Reload Config";
@@ -10050,6 +10075,35 @@ document.addEventListener('DOMContentLoaded', () => {
 // the block with the embed tool that lives in the robot's own repository,
 // e.g. keystudio_4wd_mecanum_rxy/tools/embed-firmware.cjs. This app ships no
 // firmware of its own.
+// ── SHARE ───────────────────────────────────────────────────────────────
+// A QR of the PUBLISHED address, so the next person can open this app without
+// anyone typing a URL into a tablet keyboard. Deliberately not location.href:
+// run from file:// or a laptop's localhost -- which is exactly how it gets
+// demonstrated -- that would encode an address their phone cannot reach.
+//
+// The image is baked into index.html. The address is a constant, so there is
+// no reason to carry an encoder that recomputes the same picture every load.
+(function initShareDialog() {
+  const modal = document.getElementById('shareModal');
+  const btn = document.getElementById('shareBtn');
+  if (!modal || !btn) return;
+
+  const close = () => modal.classList.add('hidden');
+  btn.onclick = () => {
+    modal.classList.remove('hidden');
+    // Nothing here is destructive, so ANY tap closes it -- including on the
+    // code itself, which people will poke at. The link is the exception.
+    modal.focus();
+  };
+  modal.onclick = e => {
+    if (e.target.closest('.qr-url')) return;
+    close();
+  };
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) close();
+  });
+})();
+
 (function initFirmwareDialog() {
   const srcEl = document.getElementById('fwSource');
   const modal = document.getElementById('fwModal');
