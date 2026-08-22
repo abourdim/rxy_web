@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.27';
+const APP_VERSION = 'v2.28';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -6689,6 +6689,15 @@ function processLine(line) {
     const announced = parseInt(line.slice(8).trim(), 10);
     configTotal = Number.isFinite(announced) && announced > 0 ? announced : 0;
     console.log('[BLE] Config begin, expecting', configTotal || 'unknown', 'chunks');
+    // A transfer the ROBOT started -- switching Level is the usual one. Only
+    // the app-initiated paths raise _allowLoadingOverlay before asking, so
+    // nothing here had ever shown the overlay: setLoadingProgress() spent ten
+    // seconds updating a hidden element while the micro:bit counted the
+    // chunks out on its own LEDs and the phone sat looking idle.
+    if (!state._allowLoadingOverlay) {
+      state._allowLoadingOverlay = true;
+      showLoading(tr('loadingTitle'), tr('loadingReceiving'));
+    }
     cancelConfigRetry();   // firmware answered — stop the retry timer
     configBuffer = '';
     configChunks = 0;
