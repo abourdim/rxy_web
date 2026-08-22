@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.25';
+const APP_VERSION = 'v2.26';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -1191,15 +1191,15 @@ function setLang(lang){
   // Runtime connect screen
   const ct = document.querySelector(".connect-text"); if (ct) ct.textContent = t.runtimeConnectText;
   const cb = $("#connectBtn"); if (cb) cb.textContent = t.runtimeConnectBtn;
-  const shb = $("#shareBtn");
+  const shb = $("#appShareBtn");
   if (shb) {
     shb.textContent = t.share || "⧉ Share";
     shb.title = t.shareTitleBtn || "Show a QR code so someone else can open this app";
   }
   const setTxt = (sel, val) => { const el = $(sel); if (el && val) el.textContent = val; };
-  setTxt("#shareTitle", t.shareHeading);
-  setTxt("#shareHint", t.shareHint);
-  setTxt("#shareClose", t.shareClose);
+  setTxt("#appShareTitle", t.shareHeading);
+  setTxt("#appShareHint", t.shareHint);
+  setTxt("#appShareClose", t.shareClose);
 
   const rcb = $("#reloadConfigBtn");
   if (rcb) {
@@ -10084,8 +10084,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // The image is baked into index.html. The address is a constant, so there is
 // no reason to carry an encoder that recomputes the same picture every load.
 (function initShareDialog() {
-  const modal = document.getElementById('shareModal');
-  const btn = document.getElementById('shareBtn');
+  const modal = document.getElementById('appShareModal');
+  const btn = document.getElementById('appShareBtn');
   if (!modal || !btn) return;
 
   const close = () => modal.classList.add('hidden');
