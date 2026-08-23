@@ -41,9 +41,17 @@ write if the path it produced does not reproduce the QR matrix exactly.
 
 | robot | firmware |
 |---|---|
-| Keyes 4WD Mecanum (micro:bit) | `keystudio_4wd_mecanum_rxy` |
-| Maqueen (micro:bit) | `maqueen-rxy` |
-| ESP32-C3 Super Mini (b3) | `esp32c3_super_mini_robot-bit-rxy` |
+| Keyes 4WD Mecanum (micro:bit) | [`keystudio_4wd_mecanum_rxy`](https://github.com/abourdim/keystudio_4wd_mecanum_rxy) |
+| Maqueen (micro:bit) | [`maqueen-rxy`](https://github.com/abourdim/maqueen-rxy) |
+| DFRobot micro:Driver rover (micro:bit) | [`dfrobot-rover`](https://github.com/abourdim/dfrobot-rover) |
+| ESP32-C3 Super Mini (b3) | [`esp32c3_super_mini_robot-bit-rxy`](https://github.com/abourdim/esp32c3_super_mini_robot-bit-rxy) |
+| ESP32-C3 Super Mini — servos + sonar | [`esp32c3_super_mini_servo_sonar-rxy`](https://github.com/abourdim/esp32c3_super_mini_servo_sonar-rxy) |
+| plain ESP32-C3, no robot — reference firmware and widget demo | [`esp32-rxy`](https://github.com/abourdim/esp32-rxy) |
+
+A robot joins this list by answering `GETCFG`; nothing in this app names any of
+them. `esp32-rxy` is the pattern to start from for a board that is not a
+micro:bit — it impersonates the micro:bit's UART service, so this app cannot
+tell the difference.
 
 ## The protocol
 
