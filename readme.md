@@ -108,12 +108,23 @@ A sweep scope, for a robot with a distance sensor on a moving head. It reads
 | `source` | the distance, in cm |
 | `angleSource` | the head angle, 0–180 |
 | `max` | beyond this a reading means "nothing there" (default 200) |
-| `model` | `dots` or `rays` |
+| `model` | `dots`, `rays`, `sectors`, `stars` or `emoji` |
 
 Rings at 10/30/100 cm, a beam on the live angle, and detections that persist
 and fade over five seconds — so a sweep builds a picture of the room instead
 of flashing one number. Blips take their colour from the threshold: red under
 10 cm, amber under 30, green beyond.
+
+**Marker styles.** All five share the same geometry and the same thresholds,
+so switching changes how the room is drawn, never where anything sits in it.
+
+| model | reads as |
+|---|---|
+| `dots` | one point per reading — the plain scatter |
+| `rays` | a bearing line from the origin out to each detection |
+| `sectors` | readings binned into 6 deg wedges: a polar occupancy grid, where walls come out as fat blocks of colour and doorways as the gaps between them |
+| `stars` | points sized by proximity as well as coloured, so the reading survives being printed and works without colour vision |
+| `emoji` | the thresholds told as symbols rather than colours, for users who read the picture long before the legend |
 
 Readings at or past `max` are **not** plotted. That value is the robot's "no
 echo", and drawing it would paint a wall at full range around an empty room.

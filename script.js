@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.29';
+const APP_VERSION = 'v2.30';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -1899,8 +1899,11 @@ function modelOptionsForType(t){
       { v:'min',     name:'Minimal' }
     ];
     case 'radar': return [
-      { v:'dots', name:'Dots' },
-      { v:'rays', name:'Rays' }
+      { v:'dots',    name:'Dots' },
+      { v:'rays',    name:'Rays' },
+      { v:'sectors', name:'Sectors' },
+      { v:'stars',   name:'Stars' },
+      { v:'emoji',   name:'Emoji' }
     ];
     case 'label': return [
       { v:'plain', name:'Plain' },
@@ -7283,6 +7286,76 @@ function feedRadars(sourceId, value) {
   });
 }
 
+// Angular width of one bin in the `sectors` model.
+const RADAR_SECTOR_DEG = 6;
+
+// Marker styles. All share the same geometry -- origin (200,200), radii
+// 40/80/160 at 10/30/100cm -- and the same threshold colours, so changing
+// style changes how the room is drawn, never where anything sits in it.
+// Ported from maqueen-lab's sweep scope so the two displays agree.
+function radarMarkers(model, blips, now) {
+  const fade = b => Math.max(0, 1 - (now - b.t) / RADAR_FADE_MS);
+
+  // Bin by bearing, draw each bin as a pie wedge out to its most recent
+  // reading. Reads as a polar occupancy grid rather than a scatter: walls
+  // come out as fat blocks of colour and doorways as the gaps between them.
+  if (model === 'sectors') {
+    const bins = new Map();
+    for (const b of blips) {
+      const id = Math.floor(b.a / RADAR_SECTOR_DEG);
+      const cur = bins.get(id);
+      if (!cur || b.t > cur.t) bins.set(id, b);
+    }
+    let out = '';
+    for (const [id, b] of bins) {
+      // Capped well below 1 so the range rings stay readable through the
+      // fill -- at full opacity a busy sweep hides its own grid.
+      const op = fade(b) * 0.55;
+      const r = radarRadius(b.cm);
+      if (r <= 0) continue;
+      const p1 = radarPolar(id * RADAR_SECTOR_DEG, r);
+      const p2 = radarPolar((id + 1) * RADAR_SECTOR_DEG, r);
+      const c = radarBlipColor(b.cm);
+      out += `<path d="M 200 200 L ${p1.x.toFixed(1)} ${p1.y.toFixed(1)} A ${r.toFixed(1)} ${r.toFixed(1)} 0 0 0 ${p2.x.toFixed(1)} ${p2.y.toFixed(1)} Z" fill="${c}" fill-opacity="${op.toFixed(2)}" stroke="${c}" stroke-width="0.4" stroke-opacity="${(op + 0.15).toFixed(2)}"/>`;
+    }
+    return out;
+  }
+
+  return blips.map(b => {
+    const op = fade(b).toFixed(2);
+    const p = radarPolar(b.a, radarRadius(b.cm));
+    const c = radarBlipColor(b.cm);
+
+    if (model === 'rays') {
+      return `<line x1="200" y1="200" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="${c}" stroke-width="${b.cm < 10 ? 1.6 : 0.9}" stroke-opacity="${op}" stroke-linecap="round"/>`;
+    }
+
+    // Size carries proximity as well as colour does, so the reading still
+    // works for anyone who cannot separate the red from the green.
+    if (model === 'stars') {
+      const R = b.cm < 10 ? 4.5 : b.cm < 30 ? 3.5 : 3.0;
+      const inner = R * 0.4;
+      let pts = '';
+      for (let v = 0; v < 10; v++) {
+        const rad = (v % 2 === 0 ? R : inner);
+        const a = (v / 10) * 2 * Math.PI - Math.PI / 2;   // first point at top
+        pts += `${(p.x + rad * Math.cos(a)).toFixed(1)},${(p.y + rad * Math.sin(a)).toFixed(1)} `;
+      }
+      return `<polygon points="${pts}" fill="${c}" opacity="${op}"/>`;
+    }
+
+    // The same thresholds told as symbols instead of colours, for the
+    // youngest users -- they read the picture long before the legend.
+    if (model === 'emoji') {
+      const g = b.cm < 10 ? '\u{1F4A5}' : b.cm < 30 ? '\u26A0\uFE0F' : '\u2728';
+      const size = b.cm < 10 ? 12 : b.cm < 30 ? 10 : 9;
+      return `<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" font-size="${size}" text-anchor="middle" dominant-baseline="central" opacity="${op}">${g}</text>`;
+    }
+
+    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${b.cm < 10 ? 3.2 : 2.6}" fill="${c}" opacity="${op}"/>`;
+  }).join('');
+}
+
 function drawRadarWidget(w) {
   const el = document.querySelector(`.rt-widget[data-id="${w.id}"] .rt-radar`);
   if (!el) return;
@@ -7297,17 +7370,7 @@ function drawRadarWidget(w) {
     beam.setAttribute('y2', p.y.toFixed(1));
   }
   const marks = el.querySelector('[data-role="radarBlips"]');
-  if (marks) {
-    const rays = (w.model || 'dots') === 'rays';
-    marks.innerHTML = st.blips.map(b => {
-      const op = Math.max(0, 1 - (now - b.t) / RADAR_FADE_MS).toFixed(2);
-      const p = radarPolar(b.a, radarRadius(b.cm));
-      const c = radarBlipColor(b.cm);
-      return rays
-        ? `<line x1="200" y1="200" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="${c}" stroke-width="${b.cm < 10 ? 1.6 : 0.9}" stroke-opacity="${op}" stroke-linecap="round"/>`
-        : `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${b.cm < 10 ? 3.2 : 2.6}" fill="${c}" opacity="${op}"/>`;
-    }).join('');
-  }
+  if (marks) marks.innerHTML = radarMarkers(w.model || 'dots', st.blips, now);
   const hudA = el.querySelector('[data-role="radarAngle"]');
   if (hudA) hudA.textContent = `ANGLE ${Math.round(st.angle)}°`;
   const hudD = el.querySelector('[data-role="radarDist"]');
