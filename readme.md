@@ -1,5 +1,11 @@
 # rxy-web — one remote for every rxy robot
 
+Shown in the app as **BLE REMOTE**. It was "MICRO:BIT REMOTE" until v2.29, back
+when a micro:bit was the only thing it talked to — but the protocol is a
+Nordic-UART GATT service, not anything micro:bit-specific, and an ESP32-C3 that
+speaks it is served exactly the same way. Naming the app after one of its
+robots was telling owners of the others that it was not for them.
+
 A drag-and-drop Bluetooth remote that runs in the browser. Nothing to install,
 no account, no WiFi.
 

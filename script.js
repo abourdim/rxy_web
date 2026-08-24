@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.28';
+const APP_VERSION = 'v2.29';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -773,7 +773,7 @@ const I18N = {
     fullscreenExit: "⛶ Exit Fullscreen",
     arrangeHint: '👆 Drag widgets to rearrange • Tap "Done" when finished',
     connect: "Tap to Connect!", connected: "Connected! 🎉",
-    runtimeConnectText: "Connect your micro:bit!",
+    runtimeConnectText: "Connect your robot!",
     runtimeConnectBtn: "🔗 Connect",
     quickActions: { duplicate:"Duplicate", color:"Random Color", lock:"Lock/Unlock", front:"Bring Front", back:"Send Back", delete:"Delete" },
     quickActionsTitles: { duplicate:"Duplicate", color:"Change color", lock:"Lock/Unlock", front:"Bring to front", back:"Send to back", delete:"Delete" },
@@ -787,7 +787,7 @@ const I18N = {
       next: "Next →", start: "Start Building! 🚀", skip: "Skip Tutorial"
     },
     loadingTitle: "🧩 Loading your remote...",
-    loadingSub: "Getting layout from micro:bit",
+    loadingSub: "Getting layout from the robot",
     loadingRequesting: "Checking layout version…",
     loadingReceiving: "Receiving layout…", loadingOf: "of", loadingSec: "s",
     loadingDecoding: "Decoding layout…",
@@ -899,7 +899,7 @@ const I18N = {
     fullscreenExit: "⛶ Quitter le plein écran",
     arrangeHint: '👆 Glisse les widgets pour les réorganiser • Appuie sur « Terminé » à la fin',
     connect: "Connecter!", connected: "Connecté! 🎉",
-    runtimeConnectText: "Connecte ton micro:bit !",
+    runtimeConnectText: "Connecte ton robot !",
     runtimeConnectBtn: "🔗 Connecter",
     quickActions: { duplicate:"Dupliquer", color:"Couleur aléatoire", lock:"Verrouiller/Déverrouiller", front:"Mettre devant", back:"Mettre derrière", delete:"Supprimer" },
     quickActionsTitles: { duplicate:"Dupliquer", color:"Changer la couleur", lock:"Verrouiller/Déverrouiller", front:"Mettre devant", back:"Mettre derrière", delete:"Supprimer" },
@@ -913,7 +913,7 @@ const I18N = {
       next: "Suivant →", start: "Commence à construire ! 🚀", skip: "Passer le tutoriel"
     },
     loadingTitle: "🧩 Chargement de ta télécommande...",
-    loadingSub: "Récupération depuis le micro:bit",
+    loadingSub: "Récupération depuis le robot",
     loadingRequesting: "Vérification de la version de la disposition…",
     loadingReceiving: "Réception de la disposition…", loadingOf: "sur", loadingSec: "s",
     loadingDecoding: "Décodage de la disposition…",
@@ -1025,7 +1025,7 @@ const I18N = {
     fullscreenExit: "⛶ الخروج من ملء الشاشة",
     arrangeHint: '👆 اسحب الأدوات لإعادة ترتيبها • اضغط "تم" عند الانتهاء',
     connect: "اضغط للاتصال!", connected: "متصل! 🎉",
-    runtimeConnectText: "اتصل بالـ micro:bit!",
+    runtimeConnectText: "اتصل بالروبوت!",
     runtimeConnectBtn: "🔗 اتصال",
     quickActions: { duplicate:"تكرار", color:"لون عشوائي", lock:"قفل/إلغاء القفل", front:"إحضار للأمام", back:"إرسال للخلف", delete:"حذف" },
     quickActionsTitles: { duplicate:"تكرار", color:"تغيير اللون", lock:"قفل/إلغاء القفل", front:"إحضار للأمام", back:"إرسال للخلف", delete:"حذف" },
@@ -1039,7 +1039,7 @@ const I18N = {
       next: "→ التالي", start: "🚀 ابدأ البناء!", skip: "تخطي البرنامج التعليمي"
     },
     loadingTitle: "🧩 جارٍ تحميل جهاز التحكم...",
-    loadingSub: "الحصول على التخطيط من micro:bit",
+    loadingSub: "الحصول على التخطيط من الروبوت",
     loadingRequesting: "جارٍ التحقق من إصدار التخطيط…",
     loadingReceiving: "جارٍ استقبال التخطيط…", loadingOf: "من", loadingSec: "ث",
     loadingDecoding: "جارٍ فك ترميز التخطيط…",
@@ -1403,7 +1403,7 @@ function makeMakeCodeCfgSnippet(cfg) {
   const b64 = unicodeBase64(json);
   const readable = JSON.stringify(payload, null, 2).split('\n').map(line => '// ' + line).join('\n');
   return `/**
- * Layout exported by Micro:bit Remote Builder ${APP_VERSION}
+ * Layout exported by BLE Remote Builder ${APP_VERSION}
  * Expected runtime revision: ${cfg.configRevision}
  * Canvas: ${cfg.canvas.w} x ${cfg.canvas.h}
  *
@@ -2539,7 +2539,7 @@ function generateDemoCode(cfg) {
   // Build header
   const header = `/**
  * ╔════════════════════════════════════════════════════════════════╗
- * ║            🎮 Micro:bit Remote Builder (bit-rxy) 🎮            ║
+ * ║                🎮 BLE Remote Builder (bit-rxy) 🎮                ║
  * ║                                                                ║
  * ║   Powered by Workshop-DIY.org                                  ║
  * ║   Build your own Bluetooth remote controller!                  ║
