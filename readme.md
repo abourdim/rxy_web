@@ -132,7 +132,12 @@ live — no reflash, no layout edit — and the choice is remembered per widget 
 in `localStorage`. `model` in the layout is only the default. The marker row
 appears under `sweep` alone, because a marker style means nothing to a heat bar.
 
-Only `sweep` uses `angleSource`. The other four need distance alone, so they
+Every kind shows the live **ANGLE** and **DIST** readout, whatever it draws:
+the head has a bearing regardless of which instrument is rendering it, and on
+the scene kinds the blip position encodes distance alone, so the angle would
+otherwise be unreadable anywhere but `sweep`.
+
+Only `sweep` *plots against* `angleSource`. The other four need distance alone, so they
 work on a robot whose sensor does not move.
 
 **Marker styles**, for `sweep` only. Naming a marker in `model` implies the

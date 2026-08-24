@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.33';
+const APP_VERSION = 'v2.34';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -7483,7 +7483,8 @@ function radarScene(kind, label) {
         <circle cx="98" cy="112" r="0.8" fill="#fbbf24"/>
         <circle cx="102" cy="112" r="0.8" fill="#fbbf24"/>
       </g>
-      <text x="24" y="30" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
+      <text x="24" y="26" class="rt-radar-hud" data-role="radarAngle">ANGLE 90°</text>
+      <text x="24" y="48" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
   }
 
   if (kind === 'sonar') {
@@ -7510,7 +7511,8 @@ function radarScene(kind, label) {
         </g>
         <rect x="86" y="115" width="28" height="10" rx="2" fill="#052e16" stroke="#22c55e" stroke-width="0.8"/>
       </g>
-      <text x="24" y="30" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
+      <text x="24" y="26" class="rt-radar-hud" data-role="radarAngle">ANGLE 90°</text>
+      <text x="24" y="48" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
   }
 
   if (kind === 'lidar') {
@@ -7529,7 +7531,8 @@ function radarScene(kind, label) {
         <rect x="88" y="114" width="24" height="10" rx="2" fill="#082f49" stroke="#38bdf8" stroke-width="0.8"/>
         <circle cx="100" cy="119" r="2" fill="#7dd3fc"/>
       </g>
-      <text x="24" y="30" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
+      <text x="24" y="26" class="rt-radar-hud" data-role="radarAngle">ANGLE 90°</text>
+      <text x="24" y="48" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
   }
 
   if (kind === 'heat') {
@@ -7543,6 +7546,7 @@ function radarScene(kind, label) {
       <rect x="20" y="70" width="360" height="44" rx="8" fill="url(#rtHeatGrad)" opacity="0.85"/>
       ${tick(0, '0')}${tick(18, '10')}${tick(30, '30')}${tick(55, '100')}${tick(100, '200+')}
       <line data-role="radarHeatMark" x1="20" y1="62" x2="20" y2="122" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+      <text x="24" y="30" class="rt-radar-hud" data-role="radarAngle">ANGLE 90°</text>
       <text x="200" y="186" text-anchor="middle" class="rt-radar-big" data-role="radarDist">— cm</text>`;
   }
 
