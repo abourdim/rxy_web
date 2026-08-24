@@ -108,14 +108,30 @@ A sweep scope, for a robot with a distance sensor on a moving head. It reads
 | `source` | the distance, in cm |
 | `angleSource` | the head angle, 0–180 |
 | `max` | beyond this a reading means "nothing there" (default 200) |
-| `model` | `dots`, `rays`, `sectors`, `stars` or `emoji` |
+| `model` | the display kind, or a sweep marker — see below |
 
 Rings at 10/30/100 cm, a beam on the live angle, and detections that persist
 and fade over five seconds — so a sweep builds a picture of the room instead
 of flashing one number. Blips take their colour from the threshold: red under
 10 cm, amber under 30, green beyond.
 
-**Marker styles.** All five share the same geometry and the same thresholds,
+**Display kinds.** `model` picks which instrument the widget is. Four of them
+show a single live reading; only `sweep` accumulates a fading trail, because
+only it is a map rather than a gauge.
+
+| model | shows |
+|---|---|
+| `sweep` | the polar scope — rings, a beam on the live bearing, and detections that persist and fade over five seconds |
+| `bat` | echolocation: a bat, expanding chirps, and the return travelling up its axis |
+| `sonar` | a submarine set — nested ping arcs and a rotating sweep arm |
+| `lidar` | a laser scanner — a scanning wedge and a point cloud at the detection |
+| `heat` | a horizontal proximity bar, no bearing at all; the sub-30 cm zone gets a third of the width because that is the part you steer by |
+
+Only `sweep` uses `angleSource`. The other four need distance alone, so they
+work on a robot whose sensor does not move.
+
+**Marker styles**, for `sweep` only. Naming a marker in `model` implies the
+sweep kind, so `model:"dots"` from an older layout still works. All five share the same geometry and the same thresholds,
 so switching changes how the room is drawn, never where anything sits in it.
 
 | model | reads as |

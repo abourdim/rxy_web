@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.30';
+const APP_VERSION = 'v2.31';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -1899,11 +1899,15 @@ function modelOptionsForType(t){
       { v:'min',     name:'Minimal' }
     ];
     case 'radar': return [
-      { v:'dots',    name:'Dots' },
-      { v:'rays',    name:'Rays' },
-      { v:'sectors', name:'Sectors' },
-      { v:'stars',   name:'Stars' },
-      { v:'emoji',   name:'Emoji' }
+      { v:'dots',    name:'Sweep · Dots' },
+      { v:'rays',    name:'Sweep · Rays' },
+      { v:'sectors', name:'Sweep · Sectors' },
+      { v:'stars',   name:'Sweep · Stars' },
+      { v:'emoji',   name:'Sweep · Emoji' },
+      { v:'bat',     name:'Bat' },
+      { v:'sonar',   name:'Sonar' },
+      { v:'lidar',   name:'LiDAR' },
+      { v:'heat',    name:'Heat' }
     ];
     case 'label': return [
       { v:'plain', name:'Plain' },
@@ -7356,6 +7360,147 @@ function radarMarkers(model, blips, now) {
   }).join('');
 }
 
+// Radar display kinds. `model` carries both axes on one property, because the
+// Build inspector only edits `model` -- a second dropdown would need inspector
+// plumbing that `source`/`angleSource` never got either. The four scene kinds
+// and the five sweep markers therefore share one flat list, and any marker
+// name implies kind `sweep`. Old layouts saying model:'dots' keep working.
+const RADAR_KINDS   = ['sweep', 'bat', 'sonar', 'lidar', 'heat'];
+const RADAR_MARKERS = ['dots', 'rays', 'sectors', 'stars', 'emoji'];
+
+function radarKind(model) {
+  const m = model || 'dots';
+  return RADAR_KINDS.includes(m) && m !== 'sweep' ? m : 'sweep';
+}
+
+function radarMarker(model) {
+  const m = model || 'dots';
+  return RADAR_MARKERS.includes(m) ? m : 'dots';
+}
+
+// bat / sonar / lidar are ported from maqueen-lab, whose scenes are all drawn
+// around an origin of (100,120) in a 200-wide space. Rather than re-deriving
+// every path into this widget's 400x215 box, the art is kept in its original
+// coordinates and one transform moves it -- so the two apps stay visually
+// identical and a fix in either can be read across.
+const RADAR_SCENE_T = 'translate(200,192) scale(1.5) translate(-100,-120)';
+
+// Distance -> y in scene coordinates. 120 is at the emitter, 30 is the far
+// edge, and 200cm is treated as the top of the scale.
+function radarSceneY(cm) {
+  return 120 - Math.min(1, Math.max(0, cm) / 200) * 90;
+}
+
+// Heat is the odd one out: a horizontal proximity bar, not a polar scope.
+// Piecewise so the sub-30cm zone -- the part you actually steer by -- gets a
+// third of the width instead of a fifteenth.
+function radarHeatPct(cm) {
+  if (cm <= 0) return 0;
+  if (cm < 10) return (cm / 10) * 18;
+  if (cm < 30) return 18 + ((cm - 10) / 20) * 12;
+  if (cm < 100) return 30 + ((cm - 30) / 70) * 25;
+  if (cm < 200) return 55 + ((cm - 100) / 100) * 45;
+  return 100;
+}
+
+function radarScene(kind, label) {
+  if (kind === 'bat') {
+    const chirp = d => `<g class="rt-radar-chirp" style="animation-delay:${d}s"><path d="M 60 120 A 40 40 0 0 1 140 120"/></g>`;
+    return `<g transform="${RADAR_SCENE_T}">
+        ${chirp(0)}${chirp(0.4)}${chirp(0.8)}
+        <g data-role="radarBlip" opacity="0">
+          <circle cx="100" cy="60" r="7" fill="#c084fc" opacity="0.25"/>
+          <circle cx="100" cy="60" r="4" fill="#c084fc"/>
+        </g>
+        <path d="M 100 120 C 86 120, 78 116, 70 110 L 60 113 L 70 105 L 78 108 L 84 102 L 90 110 L 100 112 Z" fill="#1d3556" stroke="#c084fc" stroke-width="0.7"/>
+        <path d="M 100 120 C 114 120, 122 116, 130 110 L 140 113 L 130 105 L 122 108 L 116 102 L 110 110 L 100 112 Z" fill="#1d3556" stroke="#c084fc" stroke-width="0.7"/>
+        <ellipse cx="100" cy="114" rx="5" ry="7" fill="#0a1628" stroke="#c084fc" stroke-width="0.7"/>
+        <path d="M 96 109 L 94 104 L 99 108 Z" fill="#c084fc"/>
+        <path d="M 104 109 L 106 104 L 101 108 Z" fill="#c084fc"/>
+        <circle cx="98" cy="112" r="0.8" fill="#fbbf24"/>
+        <circle cx="102" cy="112" r="0.8" fill="#fbbf24"/>
+      </g>
+      <text x="24" y="30" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
+  }
+
+  if (kind === 'sonar') {
+    return `<g transform="${RADAR_SCENE_T}">
+        <g fill="none" stroke="#22c55e" stroke-width="0.6" stroke-opacity="0.45">
+          <path d="M 80 120 A 20 20 0 0 1 120 120"/>
+          <path d="M 60 120 A 40 40 0 0 1 140 120"/>
+          <path d="M 35 120 A 65 65 0 0 1 165 120"/>
+          <path d="M 18 120 A 82 82 0 0 1 182 120"/>
+        </g>
+        <g stroke="#22c55e" stroke-width="0.4" stroke-opacity="0.35">
+          <line x1="100" y1="120" x2="29" y2="79"/>
+          <line x1="100" y1="120" x2="59" y2="49"/>
+          <line x1="100" y1="120" x2="100" y2="38"/>
+          <line x1="100" y1="120" x2="141" y2="49"/>
+          <line x1="100" y1="120" x2="171" y2="79"/>
+        </g>
+        <g class="rt-radar-sweeparm">
+          <line x1="100" y1="120" x2="100" y2="38" stroke="#86efac" stroke-width="1.2" stroke-linecap="round"/>
+        </g>
+        <g data-role="radarBlip" opacity="0">
+          <circle cx="100" cy="60" r="6" fill="#22c55e" opacity="0.3"/>
+          <circle cx="100" cy="60" r="3" fill="#86efac"/>
+        </g>
+        <rect x="86" y="115" width="28" height="10" rx="2" fill="#052e16" stroke="#22c55e" stroke-width="0.8"/>
+      </g>
+      <text x="24" y="30" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
+  }
+
+  if (kind === 'lidar') {
+    return `<g transform="${RADAR_SCENE_T}">
+        <g stroke="#38bdf8" stroke-width="0.3" stroke-opacity="0.18">
+          <line x1="18" y1="60" x2="182" y2="60"/>
+          <line x1="18" y1="90" x2="182" y2="90"/>
+          <line x1="50" y1="20" x2="50" y2="120"/>
+          <line x1="100" y1="20" x2="100" y2="120"/>
+          <line x1="150" y1="20" x2="150" y2="120"/>
+        </g>
+        <g class="rt-radar-lidararm">
+          <path d="M 100 120 L 90 30 L 110 30 Z" fill="#38bdf8" fill-opacity="0.15"/>
+        </g>
+        <g data-role="radarBlip" opacity="0"></g>
+        <rect x="88" y="114" width="24" height="10" rx="2" fill="#082f49" stroke="#38bdf8" stroke-width="0.8"/>
+        <circle cx="100" cy="119" r="2" fill="#7dd3fc"/>
+      </g>
+      <text x="24" y="30" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>`;
+  }
+
+  if (kind === 'heat') {
+    const tick = (pct, txt) => `<g><line x1="${20 + pct * 3.6}" y1="118" x2="${20 + pct * 3.6}" y2="130" stroke="var(--radar-grid)" stroke-width="1"/>` +
+      `<text x="${20 + pct * 3.6}" y="146" text-anchor="middle" class="rt-radar-tick">${txt}</text></g>`;
+    return `<defs><linearGradient id="rtHeatGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#ff4d4d"/><stop offset="18%" stop-color="#ff4d4d"/>
+        <stop offset="30%" stop-color="#ffb020"/><stop offset="55%" stop-color="#4ade80"/>
+        <stop offset="100%" stop-color="#22c55e"/>
+      </linearGradient></defs>
+      <rect x="20" y="70" width="360" height="44" rx="8" fill="url(#rtHeatGrad)" opacity="0.85"/>
+      ${tick(0, '0')}${tick(18, '10')}${tick(30, '30')}${tick(55, '100')}${tick(100, '200+')}
+      <line data-role="radarHeatMark" x1="20" y1="62" x2="20" y2="122" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+      <text x="200" y="186" text-anchor="middle" class="rt-radar-big" data-role="radarDist">— cm</text>`;
+  }
+
+  // sweep -- the polar scope
+  const ring = r => `<path d="M${200 - r},200 A${r},${r} 0 0 1 ${200 + r},200" fill="none" stroke="var(--radar-grid)" stroke-width="1"/>`;
+  const spoke = deg => {
+    const p = radarPolar(deg, 160);
+    return `<line x1="200" y1="200" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="var(--radar-grid)" stroke-width="1"/>`;
+  };
+  return `${[40, 80, 160].map(ring).join('')}
+      ${[0, 45, 90, 135, 180].map(spoke).join('')}
+      <line x1="20" y1="200" x2="380" y2="200" stroke="var(--radar-grid)" stroke-width="1.5"/>
+      <line data-role="radarBeam" x1="200" y1="200" x2="200" y2="40" stroke="var(--radar-beam)" stroke-width="2.5" stroke-linecap="round"/>
+      <g data-role="radarBlips"></g>
+      <text x="24" y="26" class="rt-radar-hud" data-role="radarAngle">ANGLE 90°</text>
+      <text x="24" y="48" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>
+      <text x="240" y="214" text-anchor="middle" class="rt-radar-tick">10</text>
+      <text x="280" y="214" text-anchor="middle" class="rt-radar-tick">30</text>
+      <text x="352" y="214" text-anchor="middle" class="rt-radar-tick">100 cm</text>`;
+}
+
 function drawRadarWidget(w) {
   const el = document.querySelector(`.rt-widget[data-id="${w.id}"] .rt-radar`);
   if (!el) return;
@@ -7363,18 +7508,65 @@ function drawRadarWidget(w) {
   const now = performance.now();
   st.blips = st.blips.filter(b => now - b.t <= RADAR_FADE_MS);
 
-  const beam = el.querySelector('[data-role="radarBeam"]');
-  if (beam) {
-    const p = radarPolar(st.angle, 160);
-    beam.setAttribute('x2', p.x.toFixed(1));
-    beam.setAttribute('y2', p.y.toFixed(1));
+  const kind = radarKind(w.model);
+  const cm = st.cm;
+
+  // The scene kinds show one live reading rather than a decaying trail: they
+  // are instruments, not maps. Only `sweep` accumulates blips, which is why
+  // only it needs the fade timer to keep repainting.
+  if (kind === 'heat') {
+    const mark = el.querySelector('[data-role="radarHeatMark"]');
+    if (mark && cm != null) {
+      const x = 20 + radarHeatPct(cm) * 3.6;
+      mark.setAttribute('x1', x.toFixed(1));
+      mark.setAttribute('x2', x.toFixed(1));
+    }
+  } else if (kind !== 'sweep') {
+    const blip = el.querySelector('[data-role="radarBlip"]');
+    if (blip) {
+      if (cm == null || cm <= 0) {
+        blip.setAttribute('opacity', '0');
+      } else {
+        const y = radarSceneY(cm);
+        const c = radarBlipColor(cm);
+        if (kind === 'lidar') {
+          // A point cloud rather than one dot: a laser scanner returns a
+          // spread of returns off a real surface, and the scatter is what
+          // makes it read as lidar instead of as a bigger sonar blip.
+          let pts = '';
+          for (let i = 0; i < 7; i++) {
+            const dx = (i - 3) * 4.5;
+            const dy = ((i * 7) % 5) - 2;
+            const r = i === 3 ? 2.4 : 1.5;
+            pts += `<circle cx="${(100 + dx).toFixed(1)}" cy="${(y + dy).toFixed(1)}" r="${r}" fill="${c}"/>`;
+          }
+          blip.innerHTML = pts;
+        } else {
+          blip.querySelectorAll('circle').forEach(circ => {
+            circ.setAttribute('cy', y.toFixed(1));
+            circ.setAttribute('fill', c);
+          });
+        }
+        blip.setAttribute('opacity', '1');
+      }
+    }
+  } else {
+    const beam = el.querySelector('[data-role="radarBeam"]');
+    if (beam) {
+      const p = radarPolar(st.angle, 160);
+      beam.setAttribute('x2', p.x.toFixed(1));
+      beam.setAttribute('y2', p.y.toFixed(1));
+    }
+    const marks = el.querySelector('[data-role="radarBlips"]');
+    if (marks) marks.innerHTML = radarMarkers(radarMarker(w.model), st.blips, now);
   }
-  const marks = el.querySelector('[data-role="radarBlips"]');
-  if (marks) marks.innerHTML = radarMarkers(w.model || 'dots', st.blips, now);
+
   const hudA = el.querySelector('[data-role="radarAngle"]');
   if (hudA) hudA.textContent = `ANGLE ${Math.round(st.angle)}°`;
   const hudD = el.querySelector('[data-role="radarDist"]');
-  if (hudD) hudD.textContent = `DIST ${st.cm == null ? '—' : Math.round(st.cm)} cm`;
+  if (hudD) hudD.textContent = kind === 'heat'
+    ? `${cm == null ? '—' : Math.round(cm)} cm`
+    : `DIST ${cm == null ? '—' : Math.round(cm)} cm`;
 }
 
 // Blips fade on a clock, not on new data: a rover that has stopped sweeping
@@ -7521,23 +7713,10 @@ function createRuntimeWidget(w) {
     case 'radar': {
       // Arcs as real SVG paths, not sampled points: this is a browser, not a
       // 128x32 panel, so there is no reason to approximate a curve.
-      const ring = r => `<path d="M${200 - r},200 A${r},${r} 0 0 1 ${200 + r},200" fill="none" stroke="var(--radar-grid)" stroke-width="1"/>`;
-      const spoke = deg => {
-        const p = radarPolar(deg, 160);
-        return `<line x1="200" y1="200" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="var(--radar-grid)" stroke-width="1"/>`;
-      };
-      return `<div class="rt-radar model-${esc(model || 'dots')}">
+      const kind = radarKind(model);
+      return `<div class="rt-radar kind-${esc(kind)} model-${esc(model || 'dots')}">
         <svg viewBox="0 0 400 215" preserveAspectRatio="xMidYMid meet">
-          ${[40, 80, 160].map(ring).join('')}
-          ${[0, 45, 90, 135, 180].map(spoke).join('')}
-          <line x1="20" y1="200" x2="380" y2="200" stroke="var(--radar-grid)" stroke-width="1.5"/>
-          <line data-role="radarBeam" x1="200" y1="200" x2="200" y2="40" stroke="var(--radar-beam)" stroke-width="2.5" stroke-linecap="round"/>
-          <g data-role="radarBlips"></g>
-          <text x="24" y="26" class="rt-radar-hud" data-role="radarAngle">ANGLE 90°</text>
-          <text x="24" y="48" class="rt-radar-hud" data-role="radarDist">DIST — cm</text>
-          <text x="240" y="214" text-anchor="middle" class="rt-radar-tick">10</text>
-          <text x="280" y="214" text-anchor="middle" class="rt-radar-tick">30</text>
-          <text x="352" y="214" text-anchor="middle" class="rt-radar-tick">100 cm</text>
+          ${radarScene(kind, label)}
         </svg>
         <span class="rt-radar-label">${label}</span>
       </div>`;
