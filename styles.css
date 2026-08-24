@@ -6724,11 +6724,15 @@ body.runtime-fullscreen .runtime-view.active{
 /* Chirps expand and fade; the sonar and lidar arms sweep. All decorative, so
    they are switched off wholesale for anyone who asked for less motion. */
 @keyframes rtRadarChirp { 0% { transform: scale(0.15); opacity: 0.9; } 100% { transform: scale(1.9); opacity: 0; } }
-@keyframes rtRadarSweepRot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* Sweeps ACROSS the dome, not around it. A full 360deg rotation spends half
+   its time below the horizon, where a sonar set has no arcs and nothing to
+   sweep -- the arm just swings out of the scene and reads as a glitch. */
+@keyframes rtRadarSweepRot { from { transform: rotate(-78deg); } to { transform: rotate(78deg); } }
 @keyframes rtRadarLidarRot { from { transform: rotate(-30deg); } to { transform: rotate(30deg); } }
 .rt-radar-chirp { fill: none; stroke: #c084fc; stroke-width: 1; opacity: 0;
                   transform-origin: 100px 120px; animation: rtRadarChirp 1.6s linear infinite; }
-.rt-radar-sweeparm { transform-origin: 100px 120px; animation: rtRadarSweepRot 3s linear infinite; }
+.rt-radar-sweeparm { transform-origin: 100px 120px;
+                     animation: rtRadarSweepRot 3s ease-in-out infinite alternate; }
 .rt-radar-lidararm { transform-origin: 100px 120px; animation: rtRadarLidarRot 2.4s ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) {
   .rt-radar-chirp, .rt-radar-sweeparm, .rt-radar-lidararm { animation: none; }

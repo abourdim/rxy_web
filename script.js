@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.32';
+const APP_VERSION = 'v2.33';
 
 window.__ovl = window.__ovl || { t:null };
 
