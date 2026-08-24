@@ -1,7 +1,7 @@
 // Bumped on every push to this repo — shown in the header next to the
 // subtitle. Simple incrementing build number, not semver: there's no
 // meaningful "breaking change" concept for a single-page kid tool.
-const APP_VERSION = 'v2.31';
+const APP_VERSION = 'v2.32';
 
 window.__ovl = window.__ovl || { t:null };
 
@@ -7368,6 +7368,69 @@ function radarMarkers(model, blips, now) {
 const RADAR_KINDS   = ['sweep', 'bat', 'sonar', 'lidar', 'heat'];
 const RADAR_MARKERS = ['dots', 'rays', 'sectors', 'stars', 'emoji'];
 
+// What the layout asked for is the DEFAULT, not the verdict. The kind is a way
+// of looking at one reading, so it belongs to whoever is looking -- switching
+// from Sweep to Heat should not need the robot reflashed, or even the layout
+// edited. Kept per widget id (a panel can carry two scopes) and per browser,
+// so a workshop bench and a phone can disagree.
+const radarPickStore = new Map();
+
+function radarPickKey(w) { return `rxy.radar.${w.id}`; }
+
+function radarPick(w) {
+  if (radarPickStore.has(w.id)) return radarPickStore.get(w.id);
+  let saved = null;
+  try { saved = localStorage.getItem(radarPickKey(w)); } catch {}
+  const pick = {
+    kind:   RADAR_KINDS.includes(saved) && saved !== 'sweep' ? saved : radarKind(w.model),
+    marker: radarMarker(w.model)
+  };
+  if (saved && RADAR_MARKERS.includes(saved)) { pick.kind = 'sweep'; pick.marker = saved; }
+  radarPickStore.set(w.id, pick);
+  return pick;
+}
+
+function radarSetPick(w, value) {
+  const pick = radarPick(w);
+  if (RADAR_MARKERS.includes(value)) { pick.kind = 'sweep'; pick.marker = value; }
+  else pick.kind = value === 'sweep' ? 'sweep' : value;
+  try { localStorage.setItem(radarPickKey(w), value); } catch {}
+}
+
+// Chip rows. The marker row only exists under `sweep`, because a marker style
+// is meaningless to a heat bar -- offering it there would be a control that
+// looks live and does nothing.
+function radarPickerHTML(w) {
+  const pick = radarPick(w);
+  const chip = (v, txt, on) =>
+    `<button type="button" class="rt-radar-chip${on ? ' is-on' : ''}" data-pick="${v}">${txt}</button>`;
+  const kinds = [['sweep', 'Sweep'], ['bat', 'Bat'], ['sonar', 'Sonar'],
+                 ['lidar', 'LiDAR'], ['heat', 'Heat']]
+    .map(([v, t]) => chip(v, t, pick.kind === v)).join('');
+  const markers = pick.kind !== 'sweep' ? '' :
+    `<div class="rt-radar-chips rt-radar-chips-sub">` +
+    [['dots', 'Dots'], ['rays', 'Rays'], ['sectors', 'Sectors'],
+     ['stars', 'Stars'], ['emoji', 'Emoji']]
+      .map(([v, t]) => chip(v, t, pick.marker === v)).join('') + `</div>`;
+  return `<div class="rt-radar-picker" data-role="radarPicker">
+      <div class="rt-radar-chips">${kinds}</div>${markers}
+    </div>`;
+}
+
+// Swapping kind replaces the whole scene, so this rebuilds rather than nudging
+// attributes -- the scenes share no elements beyond the blip role.
+function radarRepaint(w) {
+  const host = document.querySelector(`.rt-widget[data-id="${w.id}"] .rt-radar`);
+  if (!host) return;
+  const pick = radarPick(w);
+  host.className = `rt-radar kind-${pick.kind} model-${pick.marker}`;
+  const svg = host.querySelector('svg');
+  if (svg) svg.innerHTML = radarScene(pick.kind, w.label || '');
+  const picker = host.querySelector('[data-role="radarPicker"]');
+  if (picker) picker.outerHTML = radarPickerHTML(w);
+  drawRadarWidget(w);
+}
+
 function radarKind(model) {
   const m = model || 'dots';
   return RADAR_KINDS.includes(m) && m !== 'sweep' ? m : 'sweep';
@@ -7508,7 +7571,8 @@ function drawRadarWidget(w) {
   const now = performance.now();
   st.blips = st.blips.filter(b => now - b.t <= RADAR_FADE_MS);
 
-  const kind = radarKind(w.model);
+  const pick = radarPick(w);
+  const kind = pick.kind;
   const cm = st.cm;
 
   // The scene kinds show one live reading rather than a decaying trail: they
@@ -7558,7 +7622,7 @@ function drawRadarWidget(w) {
       beam.setAttribute('y2', p.y.toFixed(1));
     }
     const marks = el.querySelector('[data-role="radarBlips"]');
-    if (marks) marks.innerHTML = radarMarkers(radarMarker(w.model), st.blips, now);
+    if (marks) marks.innerHTML = radarMarkers(pick.marker, st.blips, now);
   }
 
   const hudA = el.querySelector('[data-role="radarAngle"]');
@@ -7713,12 +7777,13 @@ function createRuntimeWidget(w) {
     case 'radar': {
       // Arcs as real SVG paths, not sampled points: this is a browser, not a
       // 128x32 panel, so there is no reason to approximate a curve.
-      const kind = radarKind(model);
-      return `<div class="rt-radar kind-${esc(kind)} model-${esc(model || 'dots')}">
+      const pick = radarPick(w);
+      return `<div class="rt-radar kind-${esc(pick.kind)} model-${esc(pick.marker)}">
         <svg viewBox="0 0 400 215" preserveAspectRatio="xMidYMid meet">
-          ${radarScene(kind, label)}
+          ${radarScene(pick.kind, label)}
         </svg>
         <span class="rt-radar-label">${label}</span>
+        ${radarPickerHTML(w)}
       </div>`;
     }
 
@@ -7931,10 +7996,26 @@ function bindRuntimeWidget(el, w) {
         btnPressed = false;
       });
       break;
-    case 'radar':
+    case 'radar': {
+      // Delegated, because radarRepaint() replaces the chips it is listening
+      // to -- binding each button would go deaf after the first switch.
+      const radarHost = el.querySelector('.rt-radar');
+      if (radarHost) {
+        const onPick = ev => {
+          const btn = ev.target.closest('.rt-radar-chip');
+          if (!btn || !radarHost.contains(btn)) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          radarSetPick(w, btn.dataset.pick);
+          radarRepaint(w);
+        };
+        radarHost.addEventListener('click', onPick);
+        registerRuntimeBindingCleanup(() => radarHost.removeEventListener('click', onPick));
+      }
       startRadarFade(w);
       drawRadarWidget(w);
       break;
+    }
     case 'slider':
       let sliderEl = el.querySelector('.rt-slider');
       const sliderValueEl = el.querySelector('.rt-slider-val');

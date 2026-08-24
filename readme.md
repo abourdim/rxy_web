@@ -127,6 +127,11 @@ only it is a map rather than a gauge.
 | `lidar` | a laser scanner — a scanning wedge and a point cloud at the detection |
 | `heat` | a horizontal proximity bar, no bearing at all; the sub-30 cm zone gets a third of the width because that is the part you steer by |
 
+**The viewer picks the kind, not the layout.** Chips under the scope switch it
+live — no reflash, no layout edit — and the choice is remembered per widget id
+in `localStorage`. `model` in the layout is only the default. The marker row
+appears under `sweep` alone, because a marker style means nothing to a heat bar.
+
 Only `sweep` uses `angleSource`. The other four need distance alone, so they
 work on a robot whose sensor does not move.
 

@@ -6734,3 +6734,28 @@ body.runtime-fullscreen .runtime-view.active{
   .rt-radar-chirp, .rt-radar-sweeparm, .rt-radar-lidararm { animation: none; }
   .rt-radar-chirp { opacity: 0.35; }
 }
+
+/* ── Radar kind picker ────────────────────────────────────────────────────
+   Sits over the bottom of the scope rather than beside it: the widget is
+   sized by the layout, and stealing height for chrome would shrink the very
+   thing being looked at. */
+/* Given its own row rather than floated over the scope. Overlaying looked
+   tidier until the chips landed on top of the 10/30/100 scale labels, and a
+   range scale you cannot read is worse than a widget 30px shorter. */
+.rt-radar { display: flex; flex-direction: column; }
+.rt-radar svg { flex: 1 1 auto; min-height: 0; }
+.rt-radar-picker { display: flex; flex-direction: column; gap: 3px;
+                   align-items: center; padding: 2px 0 4px; }
+.rt-radar-chips { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center;
+                  pointer-events: auto; }
+.rt-radar-chip { font: 600 10px/1 ui-monospace, Menlo, Consolas, monospace;
+                 padding: 3px 7px; border-radius: 5px; cursor: pointer;
+                 color: var(--radar-beam, #4ade80);
+                 background: rgba(4, 12, 24, 0.72);
+                 border: 1px solid var(--radar-grid, rgba(74,222,128,0.32));
+                 transition: background .12s, color .12s; }
+.rt-radar-chip:hover { background: rgba(4, 12, 24, 0.92); }
+.rt-radar-chip.is-on { background: var(--radar-beam, #4ade80); color: #04101f; }
+.rt-radar-chips-sub .rt-radar-chip { font-size: 9px; padding: 2px 6px; opacity: 0.9; }
+/* The label used to sit bottom-left, which is now where the chips start. */
+.rt-radar:has(.rt-radar-picker) .rt-radar-label { bottom: auto; top: 4px; right: 10px; left: auto; }
